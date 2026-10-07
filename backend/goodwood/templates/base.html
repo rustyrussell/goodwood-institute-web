@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{% block title %}Website admin{% endblock %} · Goodwood Institute</title>
+<style>
+:root {
+  --cream: #F7F2E5; --cream-2: #EFE7D4; --rule: #D9CDB4; --ink: #3A2E20; --muted: #6B5B44;
+  --ochre: #B27A2B; --ochre-dk: #8A5B1E; --green: #2E4F3A;
+  --error: #A3261B; --error-bg: #F8E1DC; --warn: #7A5300; --warn-bg: #FBEBC8; --info-bg: #E4EBE3;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--cream); color: var(--ink); font: 1rem/1.5 system-ui, sans-serif; }
+a { color: var(--green); }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--ochre-dk); outline-offset: 2px; }
+header { background: var(--green); color: var(--cream); padding: 0.75rem 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; align-items: center; }
+header h1 { margin: 0; font-size: 1.125rem; font-weight: 600; }
+header nav { display: flex; gap: 1rem; }
+header a { color: var(--cream); }
+main { max-width: 72rem; margin: 0 auto; padding: 1rem; }
+h2 { font-size: 1.25rem; margin: 2rem 0 0.75rem; border-bottom: 1px solid var(--ochre); padding-bottom: 0.25rem; }
+h3 { font-size: 1.05rem; margin: 0 0 0.5rem; }
+.muted { color: var(--muted); }
+.flash { padding: 0.6rem 0.9rem; margin: 0.5rem 0; background: var(--info-bg); border-left: 4px solid var(--green); }
+.flash.error { background: var(--error-bg); border-color: var(--error); }
+.badge { display: inline-block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; padding: 0.1rem 0.45rem; border-radius: 3px; white-space: nowrap; }
+.badge.error { background: var(--error-bg); color: var(--error); }
+.badge.warning { background: var(--warn-bg); color: var(--warn); }
+.badge.info { background: var(--info-bg); color: var(--green); }
+table { border-collapse: collapse; width: 100%; background: #fff; }
+th, td { text-align: left; vertical-align: top; padding: 0.45rem 0.6rem; border-bottom: 1px solid var(--rule); }
+th { background: var(--cream-2); font-size: 0.85rem; }
+.card { background: #fff; border: 1px solid var(--rule); padding: 1rem; margin-bottom: 1rem; }
+.card dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.2rem 1rem; margin: 0.5rem 0; }
+.card dt { color: var(--ochre-dk); }
+.card dd { margin: 0; overflow-wrap: anywhere; }
+details summary { cursor: pointer; color: var(--muted); }
+.private { background: var(--cream-2); padding: 0.5rem 0.75rem; margin: 0.5rem 0 0; font-size: 0.9rem; white-space: pre-wrap; }
+button, .button { font: inherit; font-size: 0.9rem; background: var(--green); color: var(--cream); border: 0; padding: 0.45rem 0.9rem; cursor: pointer; text-decoration: none; display: inline-block; }
+button.secondary { background: transparent; color: var(--error); border: 1px solid currentColor; }
+input[type=text], input[type=url] { font: inherit; width: 100%; padding: 0.35rem 0.5rem; border: 1px solid var(--rule); background: #fff; }
+.status { display: flex; flex-wrap: wrap; gap: 0.5rem 2rem; align-items: center; background: #fff; border: 1px solid var(--rule); padding: 0.75rem 1rem; }
+.status form { margin-left: auto; }
+code, kbd { background: var(--cream-2); padding: 0 0.25rem; }
+@media (max-width: 720px) {
+  .stack thead { display: none; }
+  .stack tr { display: block; border-bottom: 2px solid var(--rule); }
+  .stack td { display: block; border: 0; padding: 0.2rem 0.6rem; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Goodwood website admin</h1>
+  <nav aria-label="Admin"><a href="{{ url_for('admin') }}">Status</a><a href="{{ url_for('guide') }}">How to write notes</a></nav>
+</header>
+<main>
+{% for category, message in get_flashed_messages(with_categories=true) %}
+  <div class="flash {{ category }}" role="status">{{ message }}</div>
+{% endfor %}
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

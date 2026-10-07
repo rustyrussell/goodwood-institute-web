@@ -1,0 +1,39 @@
+[
+  {
+    "id": "earnest-2026",
+    "title": "The Importance of Being Earnest",
+    "company": "Sample Theatre Company",
+    "startDate": "2026-11-14",
+    "endDate": "2026-11-22",
+    "times": "Evenings 7.30pm · Sunday 2pm",
+    "prices": "$25 – $35",
+    "image": "",
+    "ticketsUrl": "https://example.com/tickets",
+    "websiteUrl": "https://example.com",
+    "featured": true
+  },
+  {
+    "id": "carols-2026",
+    "title": "Christmas Carols Concert",
+    "company": "Sample Community Choir",
+    "startDate": "2026-12-06",
+    "endDate": "2026-12-06",
+    "times": "Saturday 7pm",
+    "prices": "",
+    "image": "",
+    "ticketsUrl": "",
+    "websiteUrl": "https://example.com"
+  },
+  {
+    "id": "dance-showcase-2026",
+    "title": "Summer Dance Showcase",
+    "company": "Sample Dance School",
+    "startDate": "2026-12-12",
+    "endDate": "2026-12-13",
+    "times": "Fri 7pm · Sat 1pm & 6pm",
+    "prices": "$20",
+    "image": "",
+    "ticketsUrl": "https://example.com/tickets",
+    "websiteUrl": ""
+  }
+]

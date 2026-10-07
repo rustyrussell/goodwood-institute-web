@@ -1,0 +1,29 @@
+# Copy to config.toml (or point GOODWOOD_CONFIG at it). Paths are relative to this file.
+
+[calendar]
+# Settings and sharing → Integrate calendar → Calendar ID
+id = "xxxxxxxx@group.calendar.google.com"
+# Token from `python -m goodwood.authorize` (reads as a Workspace user, so it sees the
+# venue colours). Keep it outside the web root, readable only by the app's user.
+credentials = "/etc/goodwood/website-user-token.json"
+# For development instead: a JSON file of events (see dev/make_fake_calendar.py)
+# file = "dev/calendar.json"
+
+[admin]
+password = "change me"
+
+[app]
+database = "var/goodwood.db"
+timezone = "Australia/Adelaide"
+refresh_seconds = 30
+# Development only: also serve the static site from here.
+# site_dir = "../site"
+
+# Optional: Google event colour ID -> venue. Defaults (goodwood/publish.py):
+# [venues]
+# 7 = "Studio Theatre"    # peacock (blue)
+# 9 = "Studio Theatre"    # blueberry
+# 10 = "Little Reid"      # basil (green)
+# 2 = "Little Reid"       # sage
+# 6 = "Main Theatre"      # tangerine (orange)
+# 11 = "Main Theatre"     # tomato (red): whole venue

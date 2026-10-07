@@ -1,0 +1,6 @@
+[
+  { "id": "yoga", "name": "Sample Yoga", "activity": "Hatha and restorative yoga", "sessions": [ { "day": "Mon", "time": "6pm" }, { "day": "Wed", "time": "6pm" } ], "websiteUrl": "https://example.com" },
+  { "id": "dance", "name": "Sample Dance School", "activity": "Ballet, tap and jazz for ages 4+", "sessions": [ { "day": "Tue", "time": "4pm" }, { "day": "Thu", "time": "4pm" } ], "websiteUrl": "" },
+  { "id": "choir", "name": "Sample Choir", "activity": "Community choir, all welcome", "sessions": [ { "day": "Wed", "time": "7.30pm" } ], "websiteUrl": "" },
+  { "id": "taichi", "name": "Sample Tai Chi", "activity": "Gentle movement for seniors", "sessions": [ { "day": "Sat", "time": "9am" } ], "websiteUrl": "https://example.com" }
+]
