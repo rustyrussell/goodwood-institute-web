@@ -12,28 +12,29 @@
 <style>
 body { margin: 0; background: #F7F2E5; color: #3A2E20; font-family: 'Libre Franklin', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
 a { color: #2E4F3A; text-decoration: none; }
-a:hover { color: #B27A2B; }
+a:hover { color: #8A5B1E; }
+a:focus-visible { outline: 2px solid #8A5B1E; outline-offset: 4px; }
 
 main { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 44px; padding: 64px 32px; box-sizing: border-box; text-align: center; }
 .serif { font-family: 'Marcellus', serif; }
 
 .masthead { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-h1 { margin: 0; font-family: 'Marcellus', serif; font-weight: normal; font-size: clamp(30px, 5.6vw, 46px); line-height: 1.15; letter-spacing: 6px; }
-.subtitle { font-size: clamp(11px, 1.8vw, 14px); letter-spacing: 4px; color: #8A5B1E; }
-.motto { display: flex; align-items: center; gap: 14px; margin-top: 8px; font-size: 16px; font-style: italic; letter-spacing: 2px; color: #8A5B1E; }
+h1 { margin: 0; font-family: 'Marcellus', serif; font-weight: normal; font-size: clamp(1.875rem, 5.6vw, 2.875rem); line-height: 1.15; letter-spacing: 6px; text-transform: uppercase; }
+.subtitle { font-size: clamp(0.6875rem, 1.8vw, 0.875rem); letter-spacing: 4px; text-transform: uppercase; color: #8A5B1E; }
+.motto { display: flex; align-items: center; gap: 14px; margin-top: 8px; font-size: 1rem; font-style: italic; letter-spacing: 2px; color: #8A5B1E; }
 .motto::before, .motto::after { content: ""; width: 34px; height: 1px; background: #B27A2B; }
 
-.intro { margin: 0; max-width: 30em; font-size: 17px; line-height: 1.7; color: #4A3D2C; text-wrap: pretty; }
+.intro { margin: 0; max-width: 30em; font-size: 1.0625rem; line-height: 1.7; color: #4A3D2C; text-wrap: pretty; }
 
 .contact { display: flex; flex-direction: column; align-items: center; gap: 18px; }
-.label { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #8A5B1E; }
-.contact .big { font-size: clamp(17px, 3vw, 22px); }
+.label { font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; color: #8A5B1E; }
+.contact .big { font-size: clamp(1.0625rem, 3vw, 1.375rem); }
 .email { border-bottom: 1px solid #B27A2B; padding-bottom: 4px; overflow-wrap: anywhere; }
 .phone { letter-spacing: 2px; }
-.button { font-size: 12px; letter-spacing: 3px; text-transform: uppercase; border: 1px solid #2E4F3A; padding: 12px 22px; margin-top: 6px; }
+.button { font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; border: 1px solid #2E4F3A; padding: 12px 22px; margin-top: 6px; }
 .button:hover { color: #F7F2E5; background: #2E4F3A; }
 
-footer { display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 1.7; color: #6B5B44; }
+footer { display: flex; flex-direction: column; gap: 5px; font-size: 0.8125rem; line-height: 1.7; color: #6B5B44; }
 </style>
 </head>
 <body>
@@ -51,9 +52,9 @@ footer { display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-
   </svg>
 
   <div class="masthead">
-    <h1>GOODWOOD INSTITUTE</h1>
-    <div class="subtitle serif">ASSOCIATION INCORPORATED</div>
-    <div class="motto serif">Non Sibi Sed Arti</div>
+    <h1>Goodwood Institute</h1>
+    <div class="subtitle serif">Association Incorporated</div>
+    <div class="motto serif" lang="la">Non Sibi Sed Arti</div>
   </div>
 
   <p class="intro">A new site for the theatre, studios and rehearsal rooms at 166 Goodwood Road is on its way.</p>
@@ -61,8 +62,8 @@ footer { display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-
   <div class="contact">
     <div class="label">Enquiries and bookings</div>
     <a class="big serif email" href="mailto:bookings@goodwoodinstitute.asn.au">bookings@goodwoodinstitute.asn.au</a>
-    <a class="big serif phone" href="tel:+61882723036">82723036</a>
-    <a class="button" href="docs/rates-2026-2027.pdf" target="_blank" rel="noopener">Current hire rates (PDF)</a>
+    <a class="big serif phone" href="tel:+61882723036">8272 3036</a>
+    <a class="button" href="docs/rates-2026-2027.pdf">Current hire rates (PDF)</a>
   </div>
 
   <footer>
