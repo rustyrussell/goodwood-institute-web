@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Goodwood Institute · Theatre and studios on Goodwood Road</title>
+<meta name="description" content="Shows, regular classes and venue hire at the Goodwood Institute, 166 Goodwood Road, Goodwood SA.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Libre+Franklin:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <svg width="70" height="56" viewBox="0 0 120 96" fill="none" aria-hidden="true"><path d="M8 34 L60 7 L112 34" stroke="#B27A2B" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 40 H106" stroke="#B27A2B" stroke-width="3" stroke-linecap="round"/><text x="60" y="31" text-anchor="middle" font-family="Marcellus, serif" font-size="13" letter-spacing="2" fill="#B27A2B">1928</text><path d="M24 92 V66 A14 14 0 0 1 52 66 V92" stroke="#B27A2B" stroke-width="3" stroke-linecap="round"/><path d="M68 92 V66 A14 14 0 0 1 96 66 V92" stroke="#B27A2B" stroke-width="3" stroke-linecap="round"/><path d="M6 92 H114" stroke="#B27A2B" stroke-width="3" stroke-linecap="round"/></svg>
+    <h1>Goodwood Institute</h1>
+  </header>
+  <nav class="nav" aria-label="Main">
+    <a href="#whats-on">What's on</a><span class="sep" aria-hidden="true">◆</span>
+    <a href="#hire">Hire</a><span class="sep" aria-hidden="true">◆</span>
+    <a href="#week">Classes</a><span class="sep" aria-hidden="true">◆</span>
+    <a href="#contact">Contact</a>
+  </nav>
+
+  <main>
+    <section class="stage" id="whats-on" aria-label="Featured show">
+      <div class="feature" id="feature"></div>
+      <div class="curtain left" aria-hidden="true"></div>
+      <div class="curtain right" aria-hidden="true"></div>
+      <div class="pelmet" aria-hidden="true"></div>
+    </section>
+
+    <section class="upcoming" aria-labelledby="upcoming-h">
+      <div class="section-head"><h2 id="upcoming-h">Coming up</h2></div>
+      <div id="upcoming"></div>
+    </section>
+
+    <section class="week" id="week" aria-labelledby="week-h">
+      <div class="section-head"><h2 id="week-h">Regular classes</h2></div>
+      <div class="week-tabs" id="week-tabs" role="group" aria-label="Choose a week"></div>
+      <div class="week-grid" id="week-grid" aria-live="polite"></div>
+    </section>
+
+    <section class="hire" id="hire" aria-labelledby="hire-h">
+      <div>
+        <div class="section-head"><h2 id="hire-h">Hire the Institute</h2></div>
+        <p>The theatre and studios are available for performances, rehearsals, classes and events. Call or email to check availability.</p>
+      </div>
+      <div class="buttons">
+        <a class="btn btn-solid" href="docs/rates-2026-2027.pdf">Hire rates 2026–27</a>
+        <a class="btn btn-line" href="mailto:bookings@goodwoodinstitute.asn.au">Email bookings</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer" id="contact">
+    <span>166 Goodwood Road, Goodwood SA 5034 · <a href="tel:+61882723036">8272&nbsp;3036</a> · <a href="mailto:bookings@goodwoodinstitute.asn.au">bookings@goodwoodinstitute.asn.au</a></span>
+    <span class="motto" lang="la">Non Sibi Sed Arti</span>
+  </footer>
+</div>
+<script src="app.js"></script>
+</body>
+</html>

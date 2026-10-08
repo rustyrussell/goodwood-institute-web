@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}Status{% endblock %}
+{% block content %}
+{% set s = r.sync %}
+<div class="status">
+  <div><strong>Calendar:</strong> {{ s.source }}</div>
+  <div><strong>Last updated:</strong> {{ s.lastSync or 'never' }}</div>
+  <div><strong>Events stored:</strong> {{ s.events }}</div>
+  <form method="post" action="{{ url_for('refresh') }}"><button>Refresh now</button></form>
+</div>
+{% if s.lastError %}
+  <div class="flash error" role="alert"><strong>Could not read the calendar.</strong> The website is still showing
+    what it last read. Error: {{ s.lastError }}</div>
+{% endif %}
+
+<h2 id="problems">Problems
+  <span class="badge error">{{ r.counts.error }} errors</span>
+  <span class="badge warning">{{ r.counts.warning }} warnings</span></h2>
+{% set problems = r.issues | rejectattr('severity', 'equalto', 'info') | list %}
+{% if problems %}
+<p class="muted">Errors are on entries marked PUBLISH: the problem part is left off the website. Warnings are
+  entries that might be meant for the website but aren't on it. Fix them in Google Calendar, then press
+  <em>Refresh now</em>.</p>
+<table class="stack">
+  <thead><tr><th>Type</th><th>Calendar entry</th><th>Problem</th></tr></thead>
+  <tbody>
+  {% for i in problems %}
+    <tr>
+      <td><span class="badge {{ i.severity }}">{{ i.severity }}</span></td>
+      <td>{% if i.event %}<a href="{{ i.event.link }}">{{ i.event.title }}</a><br>
+        <span class="muted">{{ i.event.when }}{% if i.count > 1 %} and {{ i.count - 1 }} more{% endif %}</span>{% endif %}</td>
+      <td>{{ i.message }}{% if i.line %} <span class="muted">(line {{ i.line }})</span>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No problems found.</p>
+{% endif %}
+
+<h2 id="shows">Published shows ({{ r.published | length }})</h2>
+<p class="muted">Exactly what each calendar entry marked PUBLISH puts on the website. Anything under
+  “Kept private” is not published.</p>
+{% for p in r.published %}
+<div class="card">
+  <h3>{{ p.public.title }}{% if p.featured %} <span class="badge info">featured</span>{% endif %}</h3>
+  <div class="muted">From calendar entry <a href="{{ p.event.link }}">{{ p.event.title }}</a> ({{ p.event.when }})</div>
+  <dl>
+    {% for k, v in p.public.items() if k != 'title' %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}
+    <dt>performances</dt>
+    <dd>{% for line in p.schedule %}{{ line.dates }}{% if line.time %} · {{ line.time }}{% endif %}{% if line.doors %} (doors {{ line.doors }}){% endif %}{% if line.status %} · {{ line.status }}{% endif %}<br>{% else %}<span class="muted">none upcoming</span>{% endfor %}</dd>
+  </dl>
+  {% if p.private %}
+  <details><summary>Kept private ({{ p.private | length }} lines)</summary>
+    <div class="private">{{ p.private | join('\n') }}</div></details>
+  {% endif %}
+</div>
+{% else %}
+<p>No calendar entries are marked PUBLISH.</p>
+{% endfor %}
+
+<h2 id="regulars">Regulars</h2>
+<p class="muted">Calendar entries whose title contains the text on the left are shown in the weekly timetable for
+  the next 4 weeks with this name, description and website. Nothing from their notes is published.</p>
+<table class="stack">
+  <thead><tr><th>Calendar title contains</th><th>Public name</th><th>Activity</th><th>Website</th><th>Next 4 weeks</th><th></th></tr></thead>
+  <tbody>
+  {% for g in r.regulars %}{% set rule = g.rule %}
+    <tr>
+      <td><input form="rule{{ rule.id }}" type="text" name="match" value="{{ rule.match }}" aria-label="Calendar title contains"></td>
+      <td><input form="rule{{ rule.id }}" type="text" name="name" value="{{ rule.name }}" aria-label="Public name"></td>
+      <td><input form="rule{{ rule.id }}" type="text" name="activity" value="{{ rule.activity }}" aria-label="Activity"></td>
+      <td><input form="rule{{ rule.id }}" type="url" name="website" value="{{ rule.website }}" aria-label="Website"></td>
+      <td>{{ g.sessions }} sessions{% if g.next %}<br><span class="muted">next {{ g.next }}</span>{% endif %}</td>
+      <td>
+        <form id="rule{{ rule.id }}" method="post" action="{{ url_for('save_rule') }}">
+          <input type="hidden" name="id" value="{{ rule.id }}"><button>Save</button></form>
+        <form method="post" action="{{ url_for('delete_rule', rule_id=rule.id) }}"
+              data-confirm="Remove {{ rule.name }} from the timetable?" onsubmit="return confirm(this.dataset.confirm)">
+          <button class="secondary">Remove</button></form>
+      </td>
+    </tr>
+  {% endfor %}
+    <tr id="new-regular">
+      <td><input form="rule-new" type="text" name="match" value="{{ prefill.match }}" placeholder="e.g. Kanti Yoga" aria-label="Calendar title contains"></td>
+      <td><input form="rule-new" type="text" name="name" value="{{ prefill.name }}" placeholder="Kanti Yoga" aria-label="Public name"></td>
+      <td><input form="rule-new" type="text" name="activity" placeholder="Hatha and restorative yoga" aria-label="Activity"></td>
+      <td><input form="rule-new" type="url" name="website" placeholder="https://" aria-label="Website"></td>
+      <td></td>
+      <td><form id="rule-new" method="post" action="{{ url_for('save_rule') }}"><button>Add</button></form></td>
+    </tr>
+  </tbody>
+</table>
+
+{% if r.unmatched %}
+<h3 style="margin-top:1.5rem">Repeated entries not on the timetable</h3>
+<p class="muted">These titles come up more than once in the next 4 weeks but don't match any regular. Ignore them if
+  they are private.</p>
+<table class="stack">
+  <thead><tr><th>Calendar title</th><th>Next</th><th>Times in next 4 weeks</th><th></th></tr></thead>
+  <tbody>
+  {% for u in r.unmatched %}
+    <tr><td><a href="{{ u.link }}">{{ u.title }}</a></td><td>{{ u.next }}</td><td>{{ u.count }}</td>
+      <td><a href="{{ url_for('admin', match=u.title, name=u.title) }}#new-regular">Add as a regular</a></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+{% set infos = r.issues | selectattr('severity', 'equalto', 'info') | list %}
+{% if infos %}
+<h2>Notes</h2>
+<ul>
+{% for i in infos %}
+  <li>{% if i.event %}<a href="{{ i.event.link }}">{{ i.event.title }}</a> ({{ i.event.when }}): {% endif %}{{ i.message }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+<p class="muted">Public data: <a href="{{ url_for('shows') }}">shows.json</a> · <a href="{{ url_for('regulars') }}">regulars.json</a>
+  · built {{ r.generated }}</p>
+{% endblock %}

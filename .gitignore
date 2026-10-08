@@ -1,0 +1,8 @@
+backend/.venv/
+backend/var/
+backend/config.toml
+backend/dev/calendar.json
+*.service-account.json
+__pycache__/
+backend/client_secret*.json
+backend/*token*.json

@@ -1,0 +1,10 @@
+# Development: fake calendar file, serves the static site too.
+[calendar]
+file = "calendar.json"
+
+[admin]
+password = "dev"
+
+[app]
+database = "../var/dev.db"
+site_dir = "../../site"
