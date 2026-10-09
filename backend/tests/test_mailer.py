@@ -43,7 +43,8 @@ class FakeSMTP:
 
 def test_message_is_sent_only_to_fixed_bookings_address_and_reply_to_sender():
     store = Store(':memory:')
-    store.save_contact('Visitor', 'visitor@example.net', '', 'Can we hire the theatre?',\n                       space='Studio Theatre', dates='Tue afternoons in November')
+    store.save_contact('Visitor', 'visitor@example.net', '', 'Can we hire the theatre?',
+                       space='Studio Theatre', dates='Tue afternoons in November')
     FakeSMTP.sent = []
     FakeSMTP.fail = False
     assert send_pending(CFG, store, FakeSMTP) == (1, 0)
