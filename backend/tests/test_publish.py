@@ -59,7 +59,7 @@ def test_show_with_matinee_block():
     assert show['title'] == 'The Importance of Being Earnest'
     assert show['company'] == 'Sample Theatre Company'
     assert show['ticketsUrl'] == 'https://example.com/tix'
-    assert show['ticketPrices'] == '$25 / $20 conc'
+    assert show['price'] == '$25 / $20 conc'
     assert show['startDate'] == '2026-11-14' and show['endDate'] == '2026-11-22'
     assert show['schedule'] == [
         {'dates': 'Sat 14 Nov – Sat 21 Nov', 'time': '7.30pm', 'doors': '7pm', 'status': ''},
@@ -420,12 +420,13 @@ def test_price_is_explicit_public_field_without_ticket_qualifier():
     out = build([ev('Private hire title', dt.date(2026, 11, 14), notes=text)], [], NOW)
     [show] = out.shows['shows']
     assert show['title'] == 'A Show'
-    assert show['ticketPrices'] == '$25 / $20 concession'
+    assert show['price'] == '$25 / $20 concession'
     assert '1,200' not in json.dumps(out.shows)
     assert issues(out, 'error') == []
 
 
-def test_old_ticket_prices_spelling_still_accepted():
+def test_old_ticket_prices_spelling_is_rejected():
     out = build([ev('Show', dt.date(2026, 11, 14),
                     notes='Publish to website\nticket prices: $30')], [], NOW)
-    assert out.shows['shows'][0]['ticketPrices'] == '$30'
+    assert out.shows['shows'] == []
+    assert any('not a recognised website instruction' in m for m in issues(out, 'error'))
