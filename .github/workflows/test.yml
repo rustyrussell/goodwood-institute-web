@@ -27,3 +27,4 @@ jobs:
         with:
           node-version: '22'
       - run: node --check site/app.js
+      - run: node --check site/contact.js
