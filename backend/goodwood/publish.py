@@ -353,6 +353,9 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
             for issue in notes.issues:
                 rep.add(event, issue.severity, issue.message, issue.line)
             _near_misses_published(event, notes, rep)
+            if notes.invalid_publish:
+                rep.add(event, 'error', 'show not published: fix the invalid instruction after Publish to website')
+                continue
             fields = show_fields(event, notes, rep)
             if not fields:
                 continue
