@@ -131,6 +131,21 @@ class Store:
                 (name, email, phone, message, space, dates)
             )
 
+    def contact_delivery_summary(self) -> dict:
+        """Staff-facing mail status; no personal details or SMTP diagnostics."""
+        with self._lock:
+            pending, needs_attention, last_accepted = self._db.execute(
+                "SELECT "
+                "COUNT(CASE WHEN emailed_at IS NULL THEN 1 END), "
+                "COUNT(CASE WHEN emailed_at IS NULL AND email_attempts >= 12 THEN 1 END), "
+                "MAX(emailed_at) FROM contact_messages"
+            ).fetchone()
+        return {
+            'pending': pending,
+            'needs_attention': needs_attention,
+            'last_accepted': last_accepted,
+        }
+
     def contacts(self) -> list[dict]:
         # Unsent enquiries remain visible even if staff marked them handled.
         with self._lock:
