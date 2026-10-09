@@ -326,7 +326,11 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
     tz: ZoneInfo = now.tzinfo
     today = now.date()
     week_start = today - dt.timedelta(days=today.weekday())
-    regulars_end = week_start + dt.timedelta(weeks=REGULAR_WEEKS)
+    # Display the remainder of this calendar month, with complete Mon–Sun
+    # week rows. Dates spilling into next month are not published as sessions.
+    next_month = (today.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+    weeks = ((next_month - week_start).days + 6) // 7
+    regulars_end = week_start + dt.timedelta(weeks=weeks)
     horizon = today + dt.timedelta(days=SHOW_HORIZON_DAYS)
     rep = Reporter()
 
@@ -398,7 +402,7 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
 
         rule = match_rule(event.summary, rules)
         if rule:
-            if not (today <= event.first_day < regulars_end):
+            if not (today <= event.first_day < next_month):
                 continue
             rule_use[rule.id].append(event.first_day)
             if 'hide' in notes.flags:
@@ -442,7 +446,7 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
             rep.add(event, 'warning', 'FEATURED has no effect without a Publish to website line')
         if 'draft' in notes.flags:
             rep.add(event, 'warning', 'DRAFT has no effect without a Publish to website line')
-        if today <= event.first_day < regulars_end and event.summary:
+        if today <= event.first_day < next_month and event.summary:
             # Regular classes are often separate entries with the same title
             # rather than a repeating event, so group by title.
             similar = similar_rule(event.summary, rules)
@@ -459,8 +463,7 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
 
     for r in rules:
         if not rule_use[r.id]:
-            rep.add(None, 'info', f'regular "{r.name}": no calendar entries containing "{r.match}" in the next '
-                                  f'{REGULAR_WEEKS} weeks')
+            rep.add(None, 'info', f'regular "{r.name}": no calendar entries containing "{r.match}" in the remainder of this month')
 
     # Public shows.
     show_list = []
