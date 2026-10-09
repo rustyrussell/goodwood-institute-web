@@ -194,7 +194,7 @@ if __name__ == '__main__':
 
     def same_origin() -> bool:
         origin = request.headers.get('Origin') or request.headers.get('Referer') or ''
-        return urlsplit(origin).netloc == request.host and urlsplit(origin).scheme == request.scheme
+        return urlsplit(origin).netloc == request.host and urlsplit(origin).scheme == 'https'
 
     # ------------------------------------------------------------ public API
 
