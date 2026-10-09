@@ -2,7 +2,10 @@
   --cream: #F7F2E5; --cream-2: #EFE7D4; --rule: #D9CDB4;
   --ink: #3A2E20; --ink-2: #4A3D2C; --muted: #6B5B44;
   --ochre: #B27A2B; --ochre-dk: #8A5B1E; --green: #2E4F3A;
-  --curtain-1: #16271C; --curtain-2: #2E4F3A; --curtain-3: #3F6A4E;
+  --curtain-base: #67192B; /* oxblood; replaceable from admin */
+  --curtain-1: color-mix(in srgb, var(--curtain-base) 65%, black);
+  --curtain-2: var(--curtain-base);
+  --curtain-3: color-mix(in srgb, var(--curtain-base) 83%, white);
   --serif: 'Marcellus', Georgia, serif; --sans: 'Libre Franklin', system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
@@ -63,17 +66,19 @@ img { display: block; max-width: 100%; }
 .show-row .btn-line { padding: 11px 15px; }
 .empty { padding: 24px 0; color: var(--muted); font-size: 0.9375rem; }
 
-.week { background: var(--cream-2); padding: 72px 96px; }
+.week { background: var(--cream-2); padding: 72px 96px; color: var(--ink); }
 .week-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); border-left: 1px solid var(--rule); }
 .day { border-right: 1px solid var(--rule); min-height: 220px; display: flex; flex-direction: column; }
 .day-name { margin: 0; font-weight: 400; font-size: 0.75rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--ochre-dk); padding: 10px 14px; border-bottom: 1px solid var(--rule); }
 .day-items { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
-.session { background: var(--cream); border-top: 2px solid var(--ochre); padding: 10px; display: flex; flex-direction: column; gap: 3px; color: var(--ink); }
+.session { background: #FFFDF8; border-top: 2px solid var(--ochre); padding: 10px; display: flex; flex-direction: column; gap: 3px; color: var(--ink); }
 .session .t { font-size: 0.75rem; color: var(--ochre-dk); }
 .session .n { font: 400 1rem/1.2 var(--serif); }
 .session .a { font-size: 0.75rem; color: var(--muted); }
 a.session:hover .n { color: var(--green); }
-.day.past { opacity: .55; }
+.day.past { background: #E9E0CD; }
+.day.past .day-name { color: var(--ink); }
+.day.past .session { border-color: var(--green); }
 .session.cancelled .n { text-decoration: line-through; }
 .week-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
 .week-tabs button { font: inherit; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; background: transparent; color: var(--green); border: 1px solid var(--green); padding: 10px 16px; cursor: pointer; }
@@ -108,4 +113,33 @@ a.session:hover .n { color: var(--green); }
   .show-row .buttons { flex-direction: row; }
   .week-grid { grid-template-columns: 1fr 1fr; }
   .hire { grid-template-columns: 1fr; }
+}
+
+/* Theatre poster carousel; controls remain keyboard-operable. */
+.poster-carousel { position: relative; }
+.poster-carousel img { width: 100%; height: 100%; object-fit: cover; }
+.poster-carousel .poster-controls { position: absolute; inset: auto 0 0; display: flex; align-items: center;
+  justify-content: space-between; gap: 8px; background: rgba(28, 17, 20, .87); color: white; padding: 7px; }
+.poster-controls button { background: white; color: #30151B; border: 0; cursor: pointer; font: 600 1rem var(--sans);
+  padding: 6px 12px; border-radius: 2px; }
+.poster-count { font: 600 0.75rem var(--sans); }
+.poster-carousel:focus-within, .poster-carousel:hover { outline-offset: 2px; }
+
+/* Forms deliberately use dark text and solid outlines; no reduced-opacity text. */
+.contact { background: var(--cream-2); padding: 64px 96px 72px; }
+.contact-intro { font: 400 1.4rem/1.5 var(--serif); max-width: 45em; margin: 10px 0 24px; }
+#contact-form { display: flex; flex-direction: column; gap: 20px; max-width: 800px; }
+#contact-form label { display: flex; flex-direction: column; gap: 7px; font-weight: 600; color: var(--ink); }
+#contact-form input, #contact-form textarea { display: block; width: 100%; border: 2px solid #6B5B44;
+  padding: 12px; font: 1rem/1.4 var(--sans); background: white; color: #272018; border-radius: 2px; }
+#contact-form textarea { resize: vertical; }
+.contact-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.contact-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.contact-actions button { cursor: pointer; border: 2px solid var(--green); }
+.contact-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.optional { font-weight: 400; }
+@media (max-width: 1100px) { .contact { padding-left: 48px; padding-right: 48px; } }
+@media (max-width: 720px) {
+  .contact { padding: 48px 20px; }
+  .contact-fields { grid-template-columns: 1fr; }
 }
