@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Goodwood Institute · Theatre and studios on Goodwood Road</title>
-<meta name="description" content="Shows, regular classes and venue hire at the Goodwood Institute, 166 Goodwood Road, Goodwood SA.">
+<meta name="description" content="Shows, classes, events and venue hire at the Goodwood Institute, 166 Goodwood Road, Goodwood SA.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Libre+Franklin:wght@400;500;600&display=swap" rel="stylesheet">
@@ -19,12 +19,23 @@
   <nav class="nav" aria-label="Main">
     <a href="#whats-on">What's on</a><span class="sep" aria-hidden="true">◆</span>
     <a href="#hire">Hire</a><span class="sep" aria-hidden="true">◆</span>
-    <a href="#week">Classes</a><span class="sep" aria-hidden="true">◆</span>
+    <a href="#week">This month</a><span class="sep" aria-hidden="true">◆</span>
     <a href="#contact">Contact</a>
     <a href="/admin/" id="staff-admin-link" hidden>Admin</a>
   </nav>
 
   <main>
+    <section class="hire" id="hire" aria-labelledby="hire-h">
+      <div>
+        <div class="section-head"><h2 id="hire-h">Hire our theatre or studios</h2></div>
+        <p>Our theatre and studios are available for performances, rehearsals, classes and events. Explore the spaces and ask us about availability.</p>
+      </div>
+      <div class="buttons">
+        <a class="btn btn-solid" href="docs/rates-2026-2027.pdf">Hire rates 2026–27</a>
+        <a class="btn btn-line" href="#contact">Enquire now</a>
+      </div>
+    </section>
+
     <section class="stage" id="whats-on" aria-label="Featured show">
       <div class="feature" id="feature"></div>
       <div class="curtain left" aria-hidden="true"></div>
@@ -38,24 +49,32 @@
     </section>
 
     <section class="week" id="week" aria-labelledby="week-h">
-      <div class="section-head"><h2 id="week-h">Regular classes</h2></div>
+      <div class="section-head"><h2 id="week-h">Happening This Month</h2></div>
       <div class="week-tabs" id="week-tabs" role="group" aria-label="Choose a week"></div>
       <div class="week-grid" id="week-grid" aria-live="polite"></div>
     </section>
 
-    <section class="hire" id="hire" aria-labelledby="hire-h">
-      <div>
-        <div class="section-head"><h2 id="hire-h">Hire the Institute</h2></div>
-        <p>The theatre and studios are available for performances, rehearsals, classes and events. Call or email to check availability.</p>
-      </div>
-      <div class="buttons">
-        <a class="btn btn-solid" href="docs/rates-2026-2027.pdf">Hire rates 2026–27</a>
-        <a class="btn btn-line" href="mailto:bookings@goodwoodinstitute.asn.au">Email bookings</a>
-      </div>
+
+
+    <section class="contact" id="contact" aria-labelledby="contact-h">
+      <div class="section-head"><h2 id="contact-h">Get in touch</h2></div>
+      <p class="contact-intro">We are flexible and have multiple spaces on offer: be sure to reach out to our friendly staff!</p>
+      <form id="contact-form" action="/api/contact" method="post">
+        <div class="contact-fields">
+          <label>Name <input name="name" type="text" autocomplete="name" maxlength="120" required></label>
+          <label>Email <input name="email" type="email" autocomplete="email" maxlength="254" required></label>
+          <label>Phone <span class="optional">(optional)</span><input name="phone" type="tel" autocomplete="tel" maxlength="60"></label>
+        </div>
+        <label>What would you like to ask us?
+          <textarea name="message" rows="5" minlength="10" maxlength="5000" required></textarea>
+        </label>
+        <div class="contact-trap" aria-hidden="true"><label>Leave this field empty <input name="website" tabindex="-1" autocomplete="off"></label></div>
+        <div class="contact-actions"><button class="btn btn-solid" type="submit">Send enquiry</button><span id="contact-status" role="status" aria-live="polite"></span></div>
+      </form>
     </section>
   </main>
 
-  <footer class="footer" id="contact">
+  <footer class="footer">
     <span>166 Goodwood Road, Goodwood SA 5034 · <a href="tel:+61882723036">8272&nbsp;3036</a> · <a href="mailto:bookings@goodwoodinstitute.asn.au">bookings@goodwoodinstitute.asn.au</a></span>
     <span class="motto" lang="la">Non Sibi Sed Arti</span>
   </footer>
