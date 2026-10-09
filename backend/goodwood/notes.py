@@ -2,7 +2,7 @@
 
 The confidentiality rule lives here: the only things that come out of the notes
 are explicitly named fields after a 'Publish to website' marker.
-Everything before that marker, and any unrecognised line, stays private.
+Everything before that marker stays private. The first malformed non-blank\nline after the marker ends public parsing; that line and all later lines stay private.
 """
 from __future__ import annotations
 
@@ -122,13 +122,24 @@ def parse_notes(description: str | None) -> Notes:
     """
     notes = Notes()
     publishing = False
+    stopped = False
     for lineno, raw in enumerate(notes_to_text(description).split('\n'), start=1):
         line = _clean(_BULLET.sub('', raw))
         if not line:
             continue
         lower = line.lower()
 
+        if stopped:
+            notes.private_lines.append(line)
+            continue
+
         if PUBLISH_MARKER.fullmatch(line):
+            if publishing:
+                notes.private_lines.append(line)
+                notes.issues.append(Issue('warning', 'duplicate Publish to website line; '
+                                          'public instructions stop here', lineno))
+                stopped = True
+                continue
             publishing = True
             notes.entries.clear()  # pre-marker regular-status notes must never enter a show
             notes.flags.add('publish')
@@ -177,23 +188,28 @@ def parse_notes(description: str | None) -> Notes:
             if key:
                 value = _clean(value).rstrip(';,. ')
                 if not value:
-                    notes.issues.append(Issue('warning', f'"{line}" has no value', lineno))
+                    notes.issues.append(Issue('warning', f'"{line}" has no value; '
+                                              'public instructions stop here', lineno))
+                    notes.private_lines.append(line)
+                    stopped = True
                     continue
                 limit = MAX_LENGTH.get(key, DEFAULT_MAX_LENGTH)
                 if len(value) > limit:
                     notes.issues.append(Issue('error', f'{key}: is longer than {limit} characters, so it is not '
                                                        'published; shorten it', lineno))
                     notes.private_lines.append(line)
+                    stopped = True
                     continue
                 notes.entries.append(Entry(key, value, lineno))
                 continue
 
         notes.private_lines.append(line)
+        stopped = True
         word = _clean(m.group(1)).lower() if m and not isinstance(m, tuple) else ''
         guessed = ALIASES.get(word) or PRICE_WORDS.get(word) or _closest_key(word) if word else None
         if guessed:
             notes.loose_keys.append((lineno, line, guessed))
-        else:
-            notes.issues.append(Issue('warning', f'"{line}" is not a recognised website instruction '
-                                                    '(kept private)', lineno))
+        notes.issues.append(Issue('warning', f'"{line}" is not a recognised website instruction; '
+                                            'public instructions stop here (this and all later lines '
+                                            'are kept private)', lineno))
     return notes
