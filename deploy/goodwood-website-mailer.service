@@ -1,0 +1,15 @@
+[Unit]
+Description=Send queued Goodwood Institute website enquiries
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=goodwood
+Group=goodwood
+WorkingDirectory=/home/goodwood/src/goodwood-institute-web/backend
+Environment=GOODWOOD_CONFIG=/home/goodwood/data/goodwoodinstitute.asn.au/website/config.toml
+ExecStart=/home/goodwood/data/goodwoodinstitute.asn.au/website/.venv/bin/python -m goodwood.mailer
+# Run only with the website's own unprivileged user, never as root.
+NoNewPrivileges=true
+PrivateTmp=true

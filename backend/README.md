@@ -2,9 +2,8 @@
 
 Reads the Institute's Google Calendar and publishes:
 
-- `/api/shows.json`: entries whose notes contain a `PUBLISH` line, built only from recognised
-  `keyword: value` lines (everything else in the notes stays private);
-- `/api/regulars.json`: the next 4 calendar weeks of regular classes, matched by title against
+- `/api/shows.json`: entries whose notes contain `Publish to website`, built only from recognised\n  instructions after the marker until the first malformed non-blank line; the rest stay private;
+- `/api/regulars.json`: the rest of the calendar month of regular classes, matched by title against
   rules kept in the admin page;
 - `/admin/`: staff status page (problems, near misses, exactly what is published, regulars
   editor) and `/admin/guide`, the notes cheat sheet for whoever edits the calendar.
@@ -85,3 +84,80 @@ Admin uses HTTP Basic auth, so serve it over HTTPS.
 | `goodwood/store.py` | SQLite: local copy of events, sync state, regulars rules. |
 | `goodwood/app.py` | Flask routes. |
 | `goodwood/authorize.py` | One-off browser sign-in that creates the user token. |
+
+
+## Venue enquiry page
+
+The homepage links to `/contact.html` (also the destination of the Hire and
+Contact navigation). This is a conventional page, not a modal: visitors can
+always return via their browser's Back button or the visible back links.
+
+It offers two *explicit* choices: (1) "Open email app", which only then launches
+a `mailto:` draft with suggested dates, details and reply information; or
+(2) a server-backed form, which needs no email client. The form links to the
+rates PDF, asks which space is required (Main Theatre, Studio Theatre, Little Reid,
+whole venue, unsure or general query), captures flexible date/time requests
+and an event description, and then requests name and email. **Phone is optional**.
+
+The validated space and optional dates are stored in new SQLite columns and
+included in outgoing emails and the private SQLite record. Existing databases migrate
+automatically; no SQL command is required. In the template, show an error and
+retain the typed values if the server rejects an enquiry. On success, confirm
+receipt; actual SMTP sending still happens in the background.
+
+## Drafts and contact enquiries
+
+Set `[app] include_drafts = true` **only on the test deployment**. This is
+false by default, ensuring that a production deployment excludes entries with
+a `DRAFT` instruction. Staff should write `Publish to website` on a line,
+then optional `DRAFT`, then whitelisted show details. Other booking notes
+belong above the marker and never enter public feeds.
+
+Contact enquiries POST to `/api/contact` and are saved in the same private
+SQLite database as the calendar cache. A separate systemd timer sends them
+through Google Workspace's IP-allowlisted, STARTTLS-only SMTP relay, to the
+**fixed** recipient `bookings@goodwoodinstitute.asn.au`. The visitor's email is
+used only for Reply-To. The staff admin page ends with a single-line delivery
+summary (last accepted email and count awaiting delivery); individual enquiry
+details and SMTP errors are not displayed to staff. Failed attempts retry with
+backoff (up to 12); no messages are deleted on SMTP failure. The form
+limits the number of submissions per hour, checks same-origin and uses a
+honeypot; watch for spam. Protect the SQLite file and include it in backups.
+
+Mail setup on CT 100 (root; do not modify production configuration in Git):
+
+1. In Google Admin → Apps → Google Workspace → Gmail → Routing, configure an
+   SMTP relay allowing **only addresses in my domains**, authenticate by the
+   ABB static public IP **144.6.28.44**, require TLS, no SMTP AUTH. Do **not**
+   select "Any addresses". Allow changes time to propagate.
+2. In the existing private `config.toml`, add:
+
+   ```toml
+   [mail]
+   smtp_host = "smtp-relay.gmail.com"
+   smtp_port = 587
+   from_address = "website@goodwoodinstitute.asn.au"
+   to_address = "bookings@goodwoodinstitute.asn.au"
+   subject_prefix = "[TEST]"
+   ```
+
+3. Install the two unit files from `deploy/` into `/etc/systemd/system/`:
+
+   ```sh
+   cp deploy/goodwood-website-mailer.{service,timer} /etc/systemd/system/
+   systemctl daemon-reload
+   systemctl enable --now goodwood-website-mailer.timer
+   ```
+
+4. Submit one test enquiry from the public form, then run
+   `systemctl start goodwood-website-mailer.service` to send immediately.
+   Check `journalctl -u goodwood-website-mailer -n 50 --no-pager`, the
+   `bookings@` inbox, and the admin delivery status. Confirm Reply-To points
+   to the visitor. The timer then runs roughly once per minute.
+
+Only the static ABB WAN IP is allowlisted; Telstra failover may prevent mail
+until ABB returns (the worker retries). TLS verification is mandatory.
+Clear the `[TEST]` subject prefix when production is ready.
+
+Curtain colour is controlled under `/admin/#appearance` and exposed only as
+a hex colour by `/api/appearance.json`. The default is oxblood `#67192B`.

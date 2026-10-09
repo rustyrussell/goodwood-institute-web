@@ -2,15 +2,16 @@
 {% block title %}How to write notes{% endblock %}
 {% block content %}
 <h2>Putting a show on the website</h2>
-<p>In the show's Google Calendar entry, add a line that says just <kbd>PUBLISH</kbd> to the notes
-  (the description). Then add any of the lines below, one per line, as <code>word: value</code>.</p>
-<p><strong>Only these lines go on the website.</strong> Everything else in the notes (hirer contacts, invoices,
-  hire prices) stays private, even on a published entry. The <a href="{{ url_for('admin') }}">status page</a>
-  shows exactly what will be published and lists anything that looks wrong.</p>
+<p>In the show's Google Calendar entry, put <kbd>Publish to website</kbd> on a line of its own in the notes
+  (the description). It can be any case and can end in a colon. Only lines <strong>after</strong> that marker are considered website instructions.</p>
+<p><strong>Only recognised fields after that marker go on the website.</strong> Private booking notes should stay above the marker.
+  An unrecognised or incomplete non-blank line <strong>prevents the entire show from being published</strong>.
+  Blank lines are allowed. The <a href="{{ url_for('admin') }}">status page</a>
+  shows the problem to fix.</p>
 
 <h3>Example</h3>
 <pre class="private">Contact: Jane 0400 123 456 (private, not published)
-PUBLISH
+Publish to website
 title: The Importance of Being Earnest
 company: Sample Theatre Company
 dates: 14–21 Nov
@@ -21,14 +22,15 @@ doors open: 1.30pm
 show starts: 2pm
 show ends: 4.30pm
 tickets: https://www.trybooking.com/…
-ticket prices: $25, $20 concession
+price: $25, $20 concession
 summary: Wilde's comedy of mistaken identity.</pre>
 
 <h3>The lines</h3>
 <table class="stack">
   <thead><tr><th>Line</th><th>What it does</th></tr></thead>
   <tbody>
-    <tr><td><kbd>PUBLISH</kbd></td><td>On its own line. Puts the entry on the website. Without it, nothing is published.</td></tr>
+    <tr><td><kbd>Publish to website</kbd></td><td>Required before any public fields. Without it, nothing is published.</td></tr>
+    <tr><td><kbd>DRAFT</kbd></td><td>After the publication marker: show on the test website only, never on the main website.</td></tr>
     <tr><td><kbd>FEATURED</kbd></td><td>On its own line. Shows this one under the curtain at the top of the page. Otherwise the next show is used.</td></tr>
     <tr><td><code>title:</code></td><td>The show's name. If left out, the calendar entry's title is used.</td></tr>
     <tr><td><code>company:</code></td><td>Who is putting the show on.</td></tr>
@@ -42,22 +44,22 @@ summary: Wilde's comedy of mistaken identity.</pre>
     <tr><td><code>doors open:</code></td><td>Time the doors open, e.g. <code>7pm</code>.</td></tr>
     <tr><td><code>show ends:</code></td><td>Time the show finishes, e.g. <code>10pm</code>. One time, or one for each show time.</td></tr>
     <tr><td><code>tickets:</code></td><td>Web address for buying tickets (starting <code>https://</code>).</td></tr>
-    <tr><td><code>ticket prices:</code></td><td>e.g. <code>$25, $20 concession</code>. (A line starting <code>price:</code> is <em>not</em> published, in case it's the hire price.)</td></tr>
+    <tr><td><code>price:</code></td><td>Ticket price information, e.g. <code>$25, $20 concession</code>.</td></tr>
     <tr><td><code>website:</code></td><td>The company's or show's web page.</td></tr>
-    <tr><td><code>image:</code></td><td>Web address of a poster picture (portrait shape works best).</td></tr>
+    <tr><td><code>image:</code></td><td>Web address of a poster picture (portrait shape works best). Add more <code>image:</code> lines to create a carousel.</td></tr>
     <tr><td><code>summary:</code></td><td>One or two sentences about the show, on one line.</td></tr>
     <tr><td><code>suitable for:</code></td><td>e.g. <code>All ages</code> or <code>15+ (coarse language)</code>.</td></tr>
     <tr><td><code>duration:</code></td><td>e.g. <code>2 hours including interval</code>.</td></tr>
     <tr><td><code>status:</code></td><td>One of: {{ statuses | join(', ') }}. After a <code>dates:</code> line it applies to just those dates.</td></tr>
   </tbody>
 </table>
-<p class="muted">Capital letters don't matter. Some other spellings also work:
+<p class="muted">Capital letters don't matter. Field lines may use a colon, equals sign or a spaced dash, and common forms such as <code>Show starts 7pm</code> work. Some other spellings also work:
   {% for key, aliases in keywords.items() if aliases | length > 1 %}{% set outer = loop %}
     {%- for a in aliases[1:] %}<code>{{ a }}:</code>{{ ', ' if not loop.last }}{% endfor %} for {{ key }}{{ '; ' if not outer.last }}{% endfor %}.</p>
 
-<h2>Regular classes</h2>
+<h2>Happening This Month</h2>
 <p>Regular hirers (yoga, dance classes…) are set up once on the <a href="{{ url_for('admin') }}#regulars">status page</a>:
-  any calendar entry whose title contains, say, “Kanti Yoga” appears in the timetable for the next 4 weeks.
+  any calendar entry whose title contains, say, “Kanti Yoga” appears in the timetable for the rest of this month.
   Their notes don't need anything, but you can add:</p>
 <table class="stack">
   <tbody>

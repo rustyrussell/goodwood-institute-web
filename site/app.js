@@ -25,9 +25,43 @@ function longRange(s, e) {
 }
 // "Fri 30 Oct – Sat 7 Nov · 7.30pm (doors 7pm)"
 const scheduleLine = l => [l.dates, l.time && (l.doors ? `${l.time} (doors ${l.doors})` : l.time), l.status].filter(Boolean).join(' · ');
-const statusBadge = s => s.status ? `<span class="status">${esc(s.status)}</span>` : '';
+const statusBadge = s => (s.draft ? '<span class="status">DRAFT · test only</span>' : '') + (s.status ? `<span class="status">${esc(s.status)}</span>` : '');
 
-const poster = s => `<div class="poster">${s.image ? `<img src="${esc(s.image)}" alt="Poster for ${esc(s.title)}" loading="lazy">` : MARK}</div>`;
+const poster = s => {
+  const images = (s.images?.length ? s.images : s.image ? [s.image] : []);
+  if (!images.length) return `<div class="poster">${MARK}</div>`;
+  if (images.length === 1) return `<div class="poster"><img src="${esc(images[0])}" alt="Poster for ${esc(s.title)}" loading="lazy"></div>`;
+  return `<div class="poster poster-carousel" data-images="${esc(JSON.stringify(images))}">
+    <img src="${esc(images[0])}" alt="Image 1 of ${images.length} for ${esc(s.title)}" loading="lazy">
+    <div class="poster-controls">
+      <button type="button" data-step="-1" aria-label="Previous image">‹</button>
+      <span class="poster-count" aria-live="polite">1 / ${images.length}</span>
+      <button type="button" data-step="1" aria-label="Next image">›</button>
+    </div>
+  </div>`;
+};
+
+function startCarousels() {
+  document.querySelectorAll('.poster-carousel').forEach(el => {
+    const images = JSON.parse(el.dataset.images);
+    const img = el.querySelector('img');
+    const count = el.querySelector('.poster-count');
+    const title = img.alt.replace(/^Image \d+ of \d+ for /, '');
+    let index = 0;
+    const move = n => {
+      index = (index + n + images.length) % images.length;
+      img.src = images[index];
+      img.alt = `Image ${index + 1} of ${images.length} for ${title}`;
+      count.textContent = `${index + 1} / ${images.length}`;
+    };
+    el.querySelectorAll('button[data-step]').forEach(b => b.addEventListener('click', () => move(Number(b.dataset.step))));
+    if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setInterval(() => {
+        if (!document.hidden && !el.matches(':hover') && !el.matches(':focus-within')) move(1);
+      }, 7500);
+    }
+  });
+}
 const buttons = (s, big) => {
   const t = s.ticketsUrl && s.status !== 'Cancelled' ? `<a class="btn btn-solid" href="${esc(s.ticketsUrl)}">${big ? 'Book tickets' : 'Tickets'}<span class="visually-hidden"> for ${esc(s.title)}</span></a>` : '';
   const w = s.websiteUrl ? `<a class="btn btn-line" href="${esc(s.websiteUrl)}">Website<span class="visually-hidden"> for ${esc(s.title)}</span></a>` : '';
@@ -40,7 +74,7 @@ function renderFeature(s) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const label = parse(s.startDate) <= today ? 'Now playing' : 'Next on stage';
   const times = (s.schedule || []).map(l => esc(scheduleLine(l))).join('<br>');
-  const facts = [['Dates', esc(longRange(s.startDate, s.endDate))], ['Times', times], ['Venue', esc(s.venue)], ['Tickets', esc(s.ticketPrices)],
+  const facts = [['Dates', esc(longRange(s.startDate, s.endDate))], ['Times', times], ['Venue', esc(s.venue)], ['Tickets', esc(s.price)],
     ['Suitable for', esc(s.suitableFor)], ['Duration', esc(s.duration)]].filter(f => f[1]);
   el.innerHTML = `${poster(s)}
     <div class="feature-text">
@@ -110,6 +144,7 @@ function openCurtain() {
   const featured = live.find(s => s.featured) || live[0];
   renderFeature(featured);
   renderUpcoming(live.filter(s => s !== featured));
+  startCarousels();
   if (regulars) renderWeeks(regulars);
   else document.getElementById('week-grid').innerHTML = '<div class="empty">The timetable is unavailable right now.</div>';
   openCurtain();
@@ -122,3 +157,12 @@ fetch('/api/staff-status', { cache: 'no-store', credentials: 'same-origin' })
     if (response.status === 204) document.getElementById('staff-admin-link').hidden = false;
   })
   .catch(() => {});
+
+
+// Theme is public configuration; the admin colour picker controls only a CSS variable.
+fetch('/api/appearance.json', { cache: 'no-store' })
+  .then(r => r.ok ? r.json() : null)
+  .then(theme => {
+    if (theme && /^#[0-9a-fA-F]{6}$/.test(theme.curtain))
+      document.documentElement.style.setProperty('--curtain-base', theme.curtain);
+  }).catch(() => {});

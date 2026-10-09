@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact and venue hire enquiries · Goodwood Institute</title>
+<meta name="description" content="Enquire about hiring Goodwood Institute's theatre or studios, or contact our team with a question.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Libre+Franklin:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <h1><a href="/">Goodwood Institute</a></h1>
+  </header>
+  <nav class="nav" aria-label="Contact page navigation">
+    <a href="/">← Back to website</a><span class="sep" aria-hidden="true">◆</span>
+    <a href="/api/hire-rates.pdf">View hire rates</a>
+  </nav>
+  <main class="enquiry-page">
+    <section aria-labelledby="enquiry-heading">
+      <p class="eyebrow">Theatre · studios · events</p>
+      <h2 class="enquiry-title" id="enquiry-heading">Get in touch</h2>
+      <p class="enquiry-lead">We are flexible and have multiple spaces on offer: be sure to reach out to our friendly staff!</p>
+    </section>
+
+    <section class="enquiry-options" aria-label="Ways to contact us">
+      <div class="enquiry-option">
+        <h3>Prefer to send an email?</h3>
+        <p>Write to <strong>bookings@goodwoodinstitute.asn.au</strong> in your own email app. We’ve prepared a few prompts to help you get started.</p>
+        <a id="enquiry-email-link" class="btn btn-line" href="mailto:bookings@goodwoodinstitute.asn.au?subject=Goodwood%20Institute%20enquiry">Open email app</a>
+        <p class="enquiry-hint">This opens your email program. Nothing is sent until you choose to send it.</p>
+      </div>
+    </section>
+
+    <section class="enquiry-form-section" id="enquiry-form" aria-labelledby="form-heading">
+      <div class="section-head"><h2 id="form-heading">Tell us what you have in mind</h2></div>
+      <p class="enquiry-hint">If you don't know the exact space or dates yet, that's fine. Just tell us what you can.</p>
+      <p><a href="/api/hire-rates.pdf">Read our hire rates and spaces (PDF)</a> before choosing a space if you'd like.</p>
+      <form id="contact-form" action="/api/contact" method="post">
+        <div class="enquiry-field">
+          <label for="space">What are you interested in?</label>
+          <select id="space" name="space" required>
+            <option value="" selected disabled>Select a space or enquiry type</option>
+            <option>Main Theatre</option>
+            <option>Studio Theatre</option>
+            <option>Little Reid</option>
+            <option>Whole venue or several spaces</option>
+            <option>Not sure yet — please advise</option>
+            <option>General enquiry (not venue hire)</option>
+          </select>
+        </div>
+        <div class="enquiry-field">
+          <label for="dates">Preferred dates and times <span class="optional">(if known)</span></label>
+          <textarea id="dates" name="dates" rows="2" maxlength="500" placeholder="For example: Saturday 21 November, afternoon and evening; or Tuesday evenings during February."></textarea>
+          <p class="enquiry-hint">A single date, a range, recurring days or a rough timeframe are all fine.</p>
+        </div>
+        <div class="enquiry-field">
+          <label for="message">Tell us about your plans</label>
+          <textarea id="message" name="message" rows="5" minlength="10" maxlength="5000" required
+                    placeholder="What kind of event, activity or question? If relevant, roughly how many people, and any staging, accessibility or equipment needs?"></textarea>
+        </div>
+
+        <h3 class="enquiry-subhead">How can we reply?</h3>
+        <div class="contact-fields">
+          <div class="enquiry-field">
+            <label for="name">Your name</label>
+            <input id="name" name="name" type="text" autocomplete="name" maxlength="120" required>
+          </div>
+          <div class="enquiry-field">
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>
+          </div>
+          <div class="enquiry-field">
+            <label for="phone">Phone <span class="optional">(optional)</span></label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="60">
+          </div>
+        </div>
+        <p class="enquiry-hint">We’ll reply to your email address; you don't need to provide a phone number.</p>
+        <div class="contact-trap" aria-hidden="true"><label>Leave this empty <input name="website" tabindex="-1" autocomplete="off"></label></div>
+        <div class="contact-actions">
+          <button class="btn btn-solid" type="submit">Send enquiry</button>
+          <span id="contact-status" role="status" aria-live="polite"></span>
+        </div>
+        <p class="enquiry-hint">Submitting this form sends your details to the Goodwood Institute bookings team.</p>
+      </form>
+    </section>
+    <p class="enquiry-back"><a href="/">← Return to the Goodwood Institute website</a></p>
+  </main>
+  <footer class="footer">
+    <span>166 Goodwood Road, Goodwood SA 5034 · <a href="tel:+61882723036">8272&nbsp;3036</a></span>
+    <span class="motto" lang="la">Non Sibi Sed Arti</span>
+  </footer>
+</div>
+<script src="/contact.js"></script>
+</body>
+</html>

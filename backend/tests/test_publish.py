@@ -37,7 +37,8 @@ def issues(out, severity=None):
 
 EARNEST = """Hirer: Jane Smith 0400 123 456
 Invoice 1234 unpaid – chase!
-PUBLISH
+Price: $1,200 hire + $500 bond
+Publish to website
 title: The Importance of Being Earnest
 company: Sample Theatre Company
 dates: 14–21 Nov
@@ -47,8 +48,7 @@ dates: Sun 22 Nov
 doors open: 1.30pm
 show starts: 2pm
 tickets: https://example.com/tix
-ticket prices: $25 / $20 conc
-Price: $1,200 hire + $500 bond
+price: $25 / $20 conc
 """
 
 
@@ -59,15 +59,14 @@ def test_show_with_matinee_block():
     assert show['title'] == 'The Importance of Being Earnest'
     assert show['company'] == 'Sample Theatre Company'
     assert show['ticketsUrl'] == 'https://example.com/tix'
-    assert show['ticketPrices'] == '$25 / $20 conc'
+    assert show['price'] == '$25 / $20 conc'
     assert show['startDate'] == '2026-11-14' and show['endDate'] == '2026-11-22'
     assert show['schedule'] == [
         {'dates': 'Sat 14 Nov – Sat 21 Nov', 'time': '7.30pm', 'doors': '7pm', 'status': ''},
         {'dates': 'Sun 22 Nov', 'time': '2pm', 'doors': '1.30pm', 'status': ''},
     ]
     assert len(show['performances']) == 9
-    # The hire price line is a near miss, reported but not published.
-    assert any('ticket prices' in m for m in issues(out, 'warning'))
+    assert issues(out, 'error') == []
 
 
 def test_private_notes_never_published():
@@ -81,7 +80,7 @@ def test_private_notes_never_published():
 
 
 def test_overlapping_blocks_are_an_error():
-    notes = 'PUBLISH\ndates: 14–22 Nov\nshow starts: 7.30pm\ndates: Sundays\nshow starts: 2pm'
+    notes = 'Publish to website\ndates: 14–22 Nov\nshow starts: 7.30pm\ndates: Sundays\nshow starts: 2pm'
     out = build([ev('Show', dt.date(2026, 11, 14), dt.date(2026, 11, 23), notes)], [], NOW)
     [show] = out.shows['shows']
     assert len(show['performances']) == 9         # Sundays keep the 7.30pm show only
@@ -90,7 +89,7 @@ def test_overlapping_blocks_are_an_error():
 
 
 def test_multiple_shows_per_day_and_default_times():
-    notes = 'PUBLISH\nshow starts: 2pm, 7.30pm\ndoors open: 1.30pm, 7pm'
+    notes = 'Publish to website\nshow starts: 2pm, 7.30pm\ndoors open: 1.30pm, 7pm'
     out = build([ev('Double', dt.date(2026, 11, 14), notes=notes)], [], NOW)
     [show] = out.shows['shows']
     assert [(p['start'], p['doors']) for p in show['performances']] == [('14:00', '13:30'), ('19:30', '19:00')]
@@ -101,7 +100,7 @@ def test_not_published_without_flag_but_reported():
     out = build([ev('Show', dt.date(2026, 11, 14), notes=notes)], [], NOW)
     assert out.shows['shows'] == []
     msgs = issues(out, 'warning')
-    assert any('PUBLISH must be on a line by itself' in m for m in msgs)
+    assert any('a line saying Publish to website is required' in m for m in msgs)
 
 
 def test_dont_publish_is_not_publish():
@@ -112,11 +111,11 @@ def test_dont_publish_is_not_publish():
 def test_show_keywords_without_publish():
     out = build([ev('Show', dt.date(2026, 11, 14), notes='show starts: 7pm\ntickets: https://x.com/a')], [], NOW)
     assert out.shows['shows'] == []
-    assert any('no PUBLISH line' in m for m in issues(out, 'warning'))
+    assert any('no Publish to website line' in m for m in issues(out, 'warning'))
 
 
 def test_publish_is_case_insensitive_and_html_notes():
-    notes = 'Some private text<br>publish<br><b>show starts:</b> 7.30pm<br>tickets: <a href="https://tix.example.com/x">Book here</a>'
+    notes = 'Some private text<br>PuBLisH to Website:<br><b>show starts:</b> 7.30pm<br>tickets: <a href="https://tix.example.com/x">Book here</a>'
     out = build([ev('Show', dt.date(2026, 11, 14), notes=notes)], [], NOW)
     [show] = out.shows['shows']
     assert show['ticketsUrl'] == 'https://tix.example.com/x'
@@ -124,26 +123,25 @@ def test_publish_is_case_insensitive_and_html_notes():
 
 
 def test_errors_are_reported():
-    notes = ('PUBLISH\ndates: 14–25 Nov\nshow starts: 7.30\ndoors open: 8pm\ntickets: www.example.com\n'
-             'status: nearly full\ntixkets: https://x.com')
+    notes = ('Publish to website\ndates: 14–25 Nov\nshow starts: 7.30\ndoors open: 8pm\ntickets: www.example.com\n'
+             'status: nearly full')
     out = build([ev('Show', dt.date(2026, 11, 14), dt.date(2026, 11, 23), notes)], [], NOW)
     errs = issues(out, 'error')
     assert any('outside the calendar entry' in m for m in errs)
     assert any('add am or pm' in m for m in errs)
     assert any('not a web address' in m for m in errs)
     assert any('nearly full' in m for m in errs)
-    assert any('"tixkets: https://x.com" looks like "tickets:"' in m for m in issues(out, 'warning'))
     assert 'ticketsUrl' not in out.shows['shows'][0]
 
 
 def test_doors_after_start():
-    out = build([ev('Show', dt.date(2026, 11, 14), notes='PUBLISH\ndoors open: 8pm\nshow starts: 7.30pm')], [], NOW)
+    out = build([ev('Show', dt.date(2026, 11, 14), notes='Publish to website\ndoors open: 8pm\nshow starts: 7.30pm')], [], NOW)
     assert any('after the show starts' in m for m in issues(out, 'error'))
     assert out.shows['shows'][0]['performances'][0]['doors'] is None
 
 
 def test_past_performances_dropped_and_show_kept_while_running():
-    notes = 'PUBLISH\nshow starts: 7.30pm'
+    notes = 'Publish to website\nshow starts: 7.30pm'
     out = build([ev('Running', dt.date(2026, 10, 5), dt.date(2026, 10, 9), notes)], [], NOW)
     [show] = out.shows['shows']
     assert show['startDate'] == '2026-10-05'
@@ -151,23 +149,23 @@ def test_past_performances_dropped_and_show_kept_while_running():
 
 
 def test_same_title_entries_are_grouped():
-    a = ev('X', dt.date(2026, 11, 14), notes='PUBLISH\ntitle: Gala\nshow starts: 7pm')
-    b = ev('Y', dt.date(2026, 11, 21), notes='PUBLISH\ntitle: Gala\nshow starts: 2pm')
+    a = ev('X', dt.date(2026, 11, 14), notes='Publish to website\ntitle: Gala\nshow starts: 7pm')
+    b = ev('Y', dt.date(2026, 11, 21), notes='Publish to website\ntitle: Gala\nshow starts: 2pm')
     out = build([a, b], [], NOW)
     [show] = out.shows['shows']
     assert len(show['performances']) == 2
 
 
 def test_featured_and_ordering():
-    a = ev('A', dt.date(2026, 11, 14), notes='PUBLISH\nshow starts: 7pm')
-    b = ev('B', dt.date(2026, 12, 1), notes='PUBLISH\nFEATURED\nshow starts: 7pm')
+    a = ev('A', dt.date(2026, 11, 14), notes='Publish to website\nshow starts: 7pm')
+    b = ev('B', dt.date(2026, 12, 1), notes='Publish to website\nFEATURED\nshow starts: 7pm')
     out = build([b, a], [], NOW)
     assert [s['title'] for s in out.shows['shows']] == ['A', 'B']
     assert out.shows['shows'][1]['featured'] is True
 
 
 def test_no_show_time_warns():
-    out = build([ev('Show', dt.date(2026, 11, 14), notes='PUBLISH')], [], NOW)
+    out = build([ev('Show', dt.date(2026, 11, 14), notes='Publish to website')], [], NOW)
     assert out.shows['shows'][0]['schedule'][0]['time'] == ''
     assert any('no "show starts:"' in m for m in issues(out, 'warning'))
 
@@ -218,38 +216,37 @@ def test_notes_to_text_handles_google_html():
 
 
 def test_overlong_value_not_published():
-    n = parse_notes('PUBLISH\ntitle: ' + 'x' * 200)
+    n = parse_notes('Publish to website\ntitle: ' + 'x' * 200)
     assert n.first('title') is None
     assert n.issues[0].severity == 'error'
 
 
 def test_bad_show_time_does_not_claim_line_missing():
-    out = build([ev('Show', dt.date(2026, 11, 14), notes='PUBLISH\nshow starts: 7\ndoors open: 6.30pm')], [], NOW)
+    out = build([ev('Show', dt.date(2026, 11, 14), notes='Publish to website\nshow starts: 7\ndoors open: 6.30pm')], [], NOW)
     msgs = issues(out)
     assert any('add am or pm' in m for m in msgs)
     assert not any('no "show starts:"' in m or 'without' in m for m in msgs)
 
 
 def test_show_ends_and_existing_note_styles():
-    # Written the way staff already write notes, plus PUBLISH.
-    notes = 'PUBLISH<br>Doors open: 6.20pm;<br>Show time: 6.30pm;<br>Show Ends: 8pm'
+    # Written the way staff already write notes, plus Publish to website.
+    notes = 'Publish to website<br>Doors open: 6.20pm;<br>Show time: 6.30pm;<br>Show Ends: 8pm'
     out = build([ev('Readings', dt.date(2026, 11, 1), notes=notes)], [], NOW)
     [show] = out.shows['shows']
     assert show['schedule'] == [{'dates': 'Sun 1 Nov', 'time': '6.30pm – 8pm', 'doors': '6.20pm', 'status': ''}]
     assert show['performances'][0]['end'] == '20:00'
 
 
-def test_time_first_lines_are_near_misses():
-    notes = 'PUBLISH\n5:45pm doors open;\n6:30pm show time;\n8:00pm approx. finish time.\nDoors open 6.20pm;'
+def test_time_first_lines_now_accepted():
+    notes = 'Publish to website\n5:45pm doors open;\n6:30pm show time;\n8:00pm approx. finish time.'
     out = build([ev('School show', dt.date(2026, 11, 18), notes=notes)], [], NOW)
-    warnings = issues(out, 'warning')
-    for key in ('doors open', 'show starts', 'show ends'):
-        assert any(f'looks like "{key}:"' in m for m in warnings), key
-    assert sum('looks like "doors open:"' in m for m in warnings) == 2
+    [show] = out.shows['shows']
+    assert show['schedule'][0]['time'] == '6.30pm – 8pm'
+    assert show['schedule'][0]['doors'] == '5.45pm'
 
 
 def test_show_ends_before_start():
-    out = build([ev('S', dt.date(2026, 11, 1), notes='PUBLISH\nshow starts: 7pm\nshow ends: 6pm')], [], NOW)
+    out = build([ev('S', dt.date(2026, 11, 1), notes='Publish to website\nshow starts: 7pm\nshow ends: 6pm')], [], NOW)
     assert any('not after it starts' in m for m in issues(out, 'error'))
 
 
@@ -264,10 +261,10 @@ def test_repeated_titles_without_recurrence_are_regular_candidates():
 
 
 def test_venue_from_colour():
-    a = ev('A', dt.date(2026, 11, 14), notes='PUBLISH\nshow starts: 7pm', colour='7')
-    b = ev('B', dt.date(2026, 11, 15), notes='PUBLISH\nshow starts: 7pm', colour='11')
-    c = ev('C', dt.date(2026, 11, 16), notes='PUBLISH\nshow starts: 7pm', colour='5')
-    d = ev('D', dt.date(2026, 11, 17), notes='PUBLISH\nshow starts: 7pm')
+    a = ev('A', dt.date(2026, 11, 14), notes='Publish to website\nshow starts: 7pm', colour='7')
+    b = ev('B', dt.date(2026, 11, 15), notes='Publish to website\nshow starts: 7pm', colour='11')
+    c = ev('C', dt.date(2026, 11, 16), notes='Publish to website\nshow starts: 7pm', colour='5')
+    d = ev('D', dt.date(2026, 11, 17), notes='Publish to website\nshow starts: 7pm')
     out = build([a, b, c, d], [], NOW)
     assert [s.get('venue') for s in out.shows['shows']] == ['Studio Theatre', 'Main Theatre', None, None]
     warnings = issues(out, 'warning')
@@ -283,7 +280,153 @@ def test_venue_mapping_is_configurable_and_on_regulars():
 
 def test_long_urls_are_published():
     url = 'https://lh3.googleusercontent.com/d/' + 'x' * 300
-    out = build([ev('S', dt.date(2026, 11, 1), notes=f'PUBLISH\nimage: {url}\ntickets: {url}')], [], NOW)
+    out = build([ev('S', dt.date(2026, 11, 1), notes=f'Publish to website\nimage: {url}\ntickets: {url}')], [], NOW)
     assert out.shows['shows'][0]['image'] == url
     assert out.shows['shows'][0]['ticketsUrl'] == url
     assert issues(out, 'error') == []
+
+
+def test_explicit_publish_boundary_handles_case_colon_and_private_fields():
+    notes = ('Contact: Real Hirer\n'
+             'title: Private contract name\n'
+             'pUbLiSh   TO   WEBSITE: yes\n'
+             'Show starts 7.30pm\n'
+             'Title - Public Show\n'
+             'Tickets = https://example.org/book\n')
+    out = build([ev('Booking', dt.date(2026, 11, 14), notes=notes)], [], NOW)
+    [show] = out.shows['shows']
+    assert show['title'] == 'Public Show'
+    assert show['ticketsUrl'] == 'https://example.org/book'
+    assert show['schedule'][0]['time'] == '7.30pm'
+    assert 'Real Hirer' not in json.dumps(out.shows)
+    assert 'Private contract name' not in json.dumps(out.shows)
+
+
+def test_only_old_publish_marker_never_publishes():
+    out = build([ev('Show', dt.date(2026, 11, 14), notes='PUBLISH\ntitle: Wrong\nshow starts: 7pm')], [], NOW)
+    assert out.shows['shows'] == []
+
+
+def test_draft_only_visible_when_explicitly_enabled():
+    e = ev('Draft event', dt.date(2026, 11, 14),
+           notes='Publish to website:\nDRAFT\nshow starts: 7pm')
+    assert build([e], [], NOW).shows['shows'] == []
+    [show] = build([e], [], NOW, include_drafts=True).shows['shows']
+    assert show['draft'] is True
+    assert len(build([e], [], NOW).report['published']) == 1
+
+
+def test_draft_and_live_with_same_title_do_not_merge():
+    live = ev('Same', dt.date(2026, 11, 14), notes='Publish to website\ntitle: Gala\nshow starts: 7pm')
+    draft = ev('Same', dt.date(2026, 11, 21), notes='Publish to website\nDRAFT\ntitle: Gala\nshow starts: 2pm')
+    out = build([live, draft], [], NOW, include_drafts=True)
+    assert len(out.shows['shows']) == 2
+    assert [s['draft'] for s in out.shows['shows']] == [False, True]
+    assert len(build([live, draft], [], NOW).shows['shows']) == 1
+
+
+def test_multiple_images_in_carousel_deduplicated_and_validated():
+    notes = ('Publish to website\nimage: https://example.org/1.png\n'
+             'poster: https://example.org/2.png\nimage: https://example.org/1.png\n'
+             'image: javascript:alert(1)')
+    out = build([ev('Show', dt.date(2026, 11, 14), notes=notes)], [], NOW)
+    [show] = out.shows['shows']
+    assert show['images'] == ['https://example.org/1.png', 'https://example.org/2.png']
+    assert show['image'] == show['images'][0]
+    assert any('not a web address' in x for x in issues(out, 'error'))
+
+
+def test_unknown_line_ends_public_fields_even_when_later_lines_are_valid():
+    e = ev('Show', dt.date(2026, 11, 14),
+           notes='Publish to website\ntitle: Public title\n'
+                 'Hirer says keep the rest confidential\n'
+                 'tickets: https://example.org/private\n'
+                 'summary: This was never authorised for publication')
+    out = build([e], [], NOW)
+    assert out.shows['shows'] == []
+    assert out.report['published'] == []
+    assert any('not a recognised website instruction' in x for x in issues(out, 'error'))
+    assert any('show not published' in x for x in issues(out, 'error'))
+
+
+def test_blank_lines_are_not_end_markers():
+    e = ev('Show', dt.date(2026, 11, 14),
+           notes='Publish to website\ntitle: Public title\n\n  \n'
+                 'tickets: https://example.org/public')
+    out = build([e], [], NOW)
+    assert out.shows['shows'][0]['ticketsUrl'] == 'https://example.org/public'
+
+
+def test_empty_or_overlong_fields_end_public_instructions():
+    for bad_field in ('company:', 'summary: ' + 'x' * 401):
+        n = parse_notes(
+            'Publish to website\ntitle: Public title\n'
+            + bad_field + '\ntickets: https://example.org/private'
+        )
+        assert n.first('title').value == 'Public title'
+        assert n.first('tickets') is None
+        assert 'tickets: https://example.org/private' in n.private_lines
+        assert n.issues
+        assert n.invalid_publish
+
+
+def test_misspelled_field_stops_public_parsing():
+    n = parse_notes(
+        'Publish to website\nTixkets: https://example.org/private\n'
+        'summary: Hidden text')
+    assert n.first('summary') is None
+    assert n.loose_keys[0][2] == 'tickets'
+    assert n.invalid_publish
+
+
+def test_publish_marker_after_unknown_line_does_not_reopen_publication():
+    n = parse_notes(
+        'Publish to website\ntitle: Public\nEnd of instructions\n'
+        'Publish to website\nsummary: Secret')
+    assert n.first('title').value == 'Public'
+    assert n.first('summary') is None
+    assert 'Publish to website' in n.private_lines
+    assert n.invalid_publish
+
+
+def test_duplicate_publish_marker_stops_public_parsing():
+    n = parse_notes(
+        'Publish to website\ntitle: Public\n'
+        'Publish to website\nsummary: Secret')
+    assert n.first('title').value == 'Public'
+    assert n.first('summary') is None
+    assert any('duplicate' in x.message for x in n.issues)
+    assert n.invalid_publish
+
+
+def test_never_publish_unrecognised_line_below_marker():
+    e = ev('Show', dt.date(2026, 11, 14),
+           notes='Publish to website\nInvoice: secret\nsummary: A good show.')
+    out = build([e], [], NOW)
+    assert 'secret' not in json.dumps(out.shows)
+    assert 'A good show.' not in json.dumps(out.shows)
+    assert out.shows['shows'] == []
+    assert any('not a recognised website instruction' in x for x in issues(out, 'error'))
+
+
+def test_price_is_explicit_public_field_without_ticket_qualifier():
+    text = (
+        'Private contract price: $1,200\n'
+        'Publish to website\n'
+        'title: A Show\n'
+        'price: $25 / $20 concession\n'
+        'tickets: https://example.org/book'
+    )
+    out = build([ev('Private hire title', dt.date(2026, 11, 14), notes=text)], [], NOW)
+    [show] = out.shows['shows']
+    assert show['title'] == 'A Show'
+    assert show['price'] == '$25 / $20 concession'
+    assert '1,200' not in json.dumps(out.shows)
+    assert issues(out, 'error') == []
+
+
+def test_old_ticket_prices_spelling_is_rejected():
+    out = build([ev('Show', dt.date(2026, 11, 14),
+                    notes='Publish to website\nticket prices: $30')], [], NOW)
+    assert out.shows['shows'] == []
+    assert any('not a recognised website instruction' in m for m in issues(out, 'error'))

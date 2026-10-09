@@ -4,7 +4,9 @@ from __future__ import annotations
 import hmac
 import logging
 import os
+import re
 import secrets
+from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -25,7 +27,7 @@ def make_service(cfg: config_mod.Config) -> Service:
         source = FileCalendar(cfg.calendar_file)
     else:
         source = GoogleCalendar(cfg.calendar_id, cfg.credentials)
-    return Service(Store(cfg.database), source, ZoneInfo(cfg.timezone), cfg.refresh_seconds, venues=cfg.venues)
+    return Service(Store(cfg.database), source, ZoneInfo(cfg.timezone), cfg.refresh_seconds, venues=cfg.venues, include_drafts=cfg.include_drafts)
 
 
 def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
@@ -33,6 +35,19 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
     app.secret_key = secrets.token_bytes(32)        # only used for flash messages
     service = service or make_service(cfg)
     app.config['service'] = service
+
+    SPACE_CHOICES = {
+        'Main Theatre', 'Studio Theatre', 'Little Reid',
+        'Whole venue or several spaces', 'Not sure yet — please advise',
+        'General enquiry (not venue hire)',
+    }
+    DEFAULT_CURTAIN = '#67192B'  # oxblood
+    HEX = re.compile(r'^#[0-9a-fA-F]{6}$')
+
+    def same_origin() -> bool:
+        origin = request.headers.get('Origin') or request.headers.get('Referer') or ''
+        # Caddy terminates TLS, so Flask's request.scheme may still be http.
+        return urlsplit(origin).netloc == request.host and urlsplit(origin).scheme in ('https', request.scheme)
 
     # ------------------------------------------------------------ public API
 
@@ -49,6 +64,44 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
     def regulars():
         return public_json(service.output().regulars)
 
+    @app.get('/api/hire-rates.pdf')
+    def hire_rates():
+        # Static PDF is in the repository docs/ directory, not site/.
+        return send_from_directory(Path(__file__).resolve().parents[2] / 'docs',
+                                   'rates-2026-2027.pdf')
+
+    @app.get('/api/appearance.json')
+    def appearance():
+        colour = service.store.get('curtain_color') or DEFAULT_CURTAIN
+        response = jsonify({'curtain': colour})
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
+    @app.post('/api/contact')
+    def contact():
+        if not same_origin():
+            abort(403)
+        if request.content_length and request.content_length > 16384:
+            abort(413)
+        if request.form.get('website', '').strip():
+            return jsonify({'ok': True}), 201  # honeypot
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        phone = request.form.get('phone', '').strip()
+        space = request.form.get('space', '').strip()
+        dates = request.form.get('dates', '').strip()
+        message = request.form.get('message', '').strip()
+        if not (2 <= len(name) <= 120 and len(email) <= 254 and
+                re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email) and
+                len(phone) <= 60 and space in SPACE_CHOICES and len(dates) <= 500
+                and 10 <= len(message) <= 5000):
+            return jsonify({'error': 'Please choose an enquiry type and enter your name, email address and a short message.'}), 400
+        try:
+            service.store.save_contact(name, email, phone, message, space=space, dates=dates)
+        except ValueError as exc:
+            return jsonify({'error': str(exc)}), 429
+        return jsonify({'ok': True}), 201
+
     # ------------------------------------------------------------ admin
 
     def admin_only(view):
@@ -57,12 +110,8 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
             auth = request.authorization
             if cfg.admin_password and (not auth or not hmac.compare_digest((auth.password or '').encode(), cfg.admin_password.encode())):
                 return Response('Staff login required', 401, {'WWW-Authenticate': 'Basic realm="Goodwood admin"'})
-            if request.method == 'POST':
-                # Basic auth is sent automatically by the browser, so refuse
-                # form posts that come from another site.
-                origin = request.headers.get('Origin') or request.headers.get('Referer') or ''
-                if urlsplit(origin).netloc != request.host:
-                    abort(403)
+            if request.method == 'POST' and not same_origin():
+                abort(403)
             return view(*args, **kwargs)
         return wrapped
 
@@ -71,7 +120,39 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
     def admin():
         out = service.output()
         prefill = {k: request.args.get(k, '') for k in ('match', 'name')}
-        return render_template('admin.html', r=out.report, prefill=prefill)
+        delivery = service.store.contact_delivery_summary()
+        if delivery['last_accepted']:
+            # SQLite's datetime('now') is UTC. Staff see the venue's local time.
+            when = datetime.fromisoformat(delivery['last_accepted'])
+            when = when.replace(tzinfo=timezone.utc).astimezone(ZoneInfo(cfg.timezone))
+            delivery['last_accepted'] = f"{when.day} {when:%b %Y}, {when.hour % 12 or 12}:{when:%M %p}"
+        return render_template('admin.html', r=out.report, prefill=prefill,
+                               curtain=service.store.get('curtain_color') or DEFAULT_CURTAIN,
+                               contact_delivery=delivery)
+
+    @app.post('/admin/appearance')
+    @admin_only
+    def save_appearance():
+        colour = request.form.get('curtain', '').strip()
+        if not HEX.fullmatch(colour):
+            abort(400)
+        service.store.set('curtain_color', colour.upper())
+        flash('Curtain colour updated.')
+        return redirect(url_for('admin') + '#appearance')
+
+    @app.post('/admin/contacts/<int:contact_id>/handled')
+    @admin_only
+    def contact_handled(contact_id: int):
+        service.store.handle_contact(contact_id)
+        flash('Enquiry marked as handled.')
+        return redirect(url_for('admin') + '#contacts')
+
+    @app.post('/admin/contacts/<int:contact_id>/retry-email')
+    @admin_only
+    def contact_retry_email(contact_id: int):
+        service.store.retry_contact(contact_id)
+        flash('Enquiry email queued for retry.')
+        return redirect(url_for('admin') + '#contacts')
 
     @app.get('/admin/guide')
     @admin_only

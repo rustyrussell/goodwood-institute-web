@@ -16,6 +16,8 @@ password = "change me"
 database = "var/goodwood.db"
 timezone = "Australia/Adelaide"
 refresh_seconds = 30
+# Enable only on test.goodwoodinstitute.asn.au; production defaults to false.
+include_drafts = false
 # Development only: also serve the static site from here.
 # site_dir = "../site"
 
@@ -27,3 +29,12 @@ refresh_seconds = 30
 # 2 = "Little Reid"       # sage
 # 6 = "Main Theatre"      # tangerine (orange)
 # 11 = "Main Theatre"     # tomato (red): whole venue
+
+# IP-authenticated Google Workspace SMTP relay (TLS required).
+# This is an example; the real settings belong only in the server's private config.toml.
+[mail]
+smtp_host = "smtp-relay.gmail.com"
+smtp_port = 587
+from_address = "website@goodwoodinstitute.asn.au"
+to_address = "bookings@goodwoodinstitute.asn.au"
+subject_prefix = "[TEST]" # clear or change before live launch

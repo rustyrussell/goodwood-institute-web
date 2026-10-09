@@ -13,7 +13,7 @@ TZ = ZoneInfo('Australia/Adelaide')
 SOON = dt.datetime.now(TZ).date() + dt.timedelta(days=10)
 
 
-def item(id, summary='Show', notes='PUBLISH\nshow starts: 7pm', status='confirmed'):
+def item(id, summary='Show', notes='Publish to website\nshow starts: 7pm', status='confirmed'):
     return {'id': id, 'status': status, 'summary': summary, 'description': notes,
             'start': {'date': SOON.isoformat()}, 'end': {'date': (SOON + dt.timedelta(days=1)).isoformat()}, 'htmlLink': ''}
 
@@ -137,3 +137,73 @@ def test_changed_source_forces_full_sync():
     svc.refresh_now()
     assert src.calls == [None, None]
     assert titles(svc) == ['B']
+
+
+def test_public_contact_is_private_and_staff_can_handle():
+    c, svc = admin_client()
+    data = {'name': 'Visitor', 'email': 'visitor@example.org', 'message': 'Can we hire the theatre?',
+            'space': 'Studio Theatre', 'dates': 'Sat 21 Nov 2026, 3pm-11pm'}
+    assert c.post('/api/contact', data=data).status_code == 403
+    assert c.post('/api/contact', data=data, headers={'Origin': 'http://localhost'}).status_code == 201
+    [msg] = svc.store.contacts()
+    assert msg['name'] == 'Visitor'
+    assert msg['space'] == 'Studio Theatre'
+    assert msg['dates'] == 'Sat 21 Nov 2026, 3pm-11pm'
+    assert msg['message'] == 'Can we hire the theatre?'
+    assert 'Visitor' not in c.get('/api/shows.json').get_data(as_text=True)
+    admin_html = c.get('/admin/', headers=AUTH).get_data(as_text=True)
+    assert 'Website enquiries:' in admin_html
+    assert '1 awaiting delivery' in admin_html
+    assert 'No enquiries emailed yet' in admin_html
+    assert 'Can we hire the theatre?' not in admin_html
+    assert 'visitor@example.org' not in admin_html
+    assert admin_html.index('Website enquiries:') > admin_html.index('Regulars')
+    assert c.post(f"/admin/contacts/{msg['id']}/handled",
+                  headers={**AUTH, 'Origin': 'http://localhost'}).status_code == 302
+    assert svc.store.contacts()[0]['handled'] == 1  # remains visible until emailed
+    svc.store.mark_emailed(msg['id'])
+    assert svc.store.contacts() == []
+    delivered = c.get('/admin/', headers=AUTH).get_data(as_text=True)
+    assert 'Last enquiry sent for email delivery:' in delivered
+    assert 'No emails pending.' in delivered
+
+
+def test_admin_enquiry_summary_flags_unresolved_delivery_without_exposing_details():
+    c, svc = admin_client()
+    store = svc.store
+    store.save_contact('A visitor', 'first@example.net', '', 'First private message')
+    store.save_contact('Another visitor', 'second@example.net', '', 'Second private message')
+    [first, second] = store.pending_emails()
+    store.mark_emailed(first['id'])
+    for _ in range(12):
+        store.mark_email_failed(second['id'], 'SMTP diagnostic that staff should not see')
+    assert store.contact_delivery_summary()['needs_attention'] == 1
+    page = c.get('/admin/', headers=AUTH).get_data(as_text=True)
+    assert 'Last enquiry sent for email delivery:' in page
+    assert '1 awaiting delivery' in page
+    assert '1 need attention' in page
+    assert 'SMTP diagnostic' not in page
+    assert 'private message' not in page
+    assert 'first@example.net' not in page
+    assert 'second@example.net' not in page
+
+
+def test_contact_validation_and_honeypot():
+    c, svc = admin_client()
+    valid = {'name': 'Visitor', 'email': 'visitor@example.org', 'message': 'A long enough message.',
+             'space': 'Not sure yet — please advise'}
+    h = {'Origin': 'http://localhost'}
+    assert c.post('/api/contact', data={**valid, 'email': 'wrong'}, headers=h).status_code == 400
+    assert c.post('/api/contact', data={**valid, 'space': 'Other made-up'}, headers=h).status_code == 400
+    assert c.post('/api/contact', data={**valid, 'space': ''}, headers=h).status_code == 400
+    assert c.post('/api/contact', data={**valid, 'website': 'spambot.example'}, headers=h).status_code == 201
+    assert svc.store.contacts() == []
+
+
+def test_curtain_colour_api_and_admin_only_editing():
+    c, svc = admin_client()
+    assert c.get('/api/appearance.json').json == {'curtain': '#67192B'}
+    assert c.post('/admin/appearance', data={'curtain': '#FFFFFF'}, headers={'Origin': 'http://localhost'}).status_code == 401
+    assert c.post('/admin/appearance', data={'curtain': 'red'}, headers={**AUTH, 'Origin': 'http://localhost'}).status_code == 400
+    assert c.post('/admin/appearance', data={'curtain': '#882233'}, headers={**AUTH, 'Origin': 'http://localhost'}).status_code == 302
+    assert c.get('/api/appearance.json').json == {'curtain': '#882233'}

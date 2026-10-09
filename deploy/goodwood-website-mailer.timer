@@ -1,0 +1,12 @@
+[Unit]
+Description=Retry website enquiry emails every minute
+
+[Timer]
+OnBootSec=45s
+OnUnitInactiveSec=60s
+AccuracySec=10s
+Persistent=true
+Unit=goodwood-website-mailer.service
+
+[Install]
+WantedBy=timers.target

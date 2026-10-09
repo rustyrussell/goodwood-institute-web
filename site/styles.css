@@ -2,7 +2,10 @@
   --cream: #F7F2E5; --cream-2: #EFE7D4; --rule: #D9CDB4;
   --ink: #3A2E20; --ink-2: #4A3D2C; --muted: #6B5B44;
   --ochre: #B27A2B; --ochre-dk: #8A5B1E; --green: #2E4F3A;
-  --curtain-1: #16271C; --curtain-2: #2E4F3A; --curtain-3: #3F6A4E;
+  --curtain-base: #67192B; /* oxblood; replaceable from admin */
+  --curtain-1: color-mix(in srgb, var(--curtain-base) 65%, black);
+  --curtain-2: var(--curtain-base);
+  --curtain-3: color-mix(in srgb, var(--curtain-base) 83%, white);
   --serif: 'Marcellus', Georgia, serif; --sans: 'Libre Franklin', system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
@@ -63,17 +66,19 @@ img { display: block; max-width: 100%; }
 .show-row .btn-line { padding: 11px 15px; }
 .empty { padding: 24px 0; color: var(--muted); font-size: 0.9375rem; }
 
-.week { background: var(--cream-2); padding: 72px 96px; }
+.week { background: var(--cream-2); padding: 72px 96px; color: var(--ink); }
 .week-grid { display: grid; grid-template-columns: repeat(7, minmax(0,1fr)); border-left: 1px solid var(--rule); }
 .day { border-right: 1px solid var(--rule); min-height: 220px; display: flex; flex-direction: column; }
 .day-name { margin: 0; font-weight: 400; font-size: 0.75rem; letter-spacing: 2.5px; text-transform: uppercase; color: var(--ochre-dk); padding: 10px 14px; border-bottom: 1px solid var(--rule); }
 .day-items { display: flex; flex-direction: column; gap: 10px; padding: 12px; }
-.session { background: var(--cream); border-top: 2px solid var(--ochre); padding: 10px; display: flex; flex-direction: column; gap: 3px; color: var(--ink); }
+.session { background: #FFFDF8; border-top: 2px solid var(--ochre); padding: 10px; display: flex; flex-direction: column; gap: 3px; color: var(--ink); }
 .session .t { font-size: 0.75rem; color: var(--ochre-dk); }
 .session .n { font: 400 1rem/1.2 var(--serif); }
 .session .a { font-size: 0.75rem; color: var(--muted); }
 a.session:hover .n { color: var(--green); }
-.day.past { opacity: .55; }
+.day.past { background: #E9E0CD; }
+.day.past .day-name { color: var(--ink); }
+.day.past .session { border-color: var(--green); }
 .session.cancelled .n { text-decoration: line-through; }
 .week-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
 .week-tabs button { font: inherit; font-size: 0.75rem; letter-spacing: 2px; text-transform: uppercase; background: transparent; color: var(--green); border: 1px solid var(--green); padding: 10px 16px; cursor: pointer; }
@@ -108,4 +113,79 @@ a.session:hover .n { color: var(--green); }
   .show-row .buttons { flex-direction: row; }
   .week-grid { grid-template-columns: 1fr 1fr; }
   .hire { grid-template-columns: 1fr; }
+}
+
+/* Theatre poster carousel; controls remain keyboard-operable. */
+.poster-carousel { position: relative; }
+.poster-carousel img { width: 100%; height: 100%; object-fit: cover; }
+.poster-carousel .poster-controls { position: absolute; inset: auto 0 0; display: flex; align-items: center;
+  justify-content: space-between; gap: 8px; background: rgba(28, 17, 20, .87); color: white; padding: 7px; }
+.poster-controls button { background: white; color: #30151B; border: 0; cursor: pointer; font: 600 1rem var(--sans);
+  padding: 6px 12px; border-radius: 2px; }
+.poster-count { font: 600 0.75rem var(--sans); }
+.poster-carousel:focus-within, .poster-carousel:hover { outline-offset: 2px; }
+
+/* Forms deliberately use dark text and solid outlines; no reduced-opacity text. */
+.contact { background: var(--cream-2); padding: 64px 96px 72px; }
+.contact .section-head h2 { max-width: 25em; line-height: 1.25; }
+.contact-intro { font: 400 1.4rem/1.5 var(--serif); max-width: 45em; margin: 10px 0 24px; }
+#contact-form { display: flex; flex-direction: column; gap: 20px; max-width: 800px; }
+#contact-form label { display: flex; flex-direction: column; gap: 7px; font-weight: 600; color: var(--ink); }
+#contact-form input, #contact-form textarea { display: block; width: 100%; border: 2px solid #6B5B44;
+  padding: 12px; font: 1rem/1.4 var(--sans); background: white; color: #272018; border-radius: 2px; }
+#contact-form textarea { resize: vertical; }
+.contact-fields { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+.contact-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.contact-actions button { cursor: pointer; border: 2px solid var(--green); }
+.contact-trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.optional { font-weight: 400; }
+@media (max-width: 1100px) { .contact { padding-left: 48px; padding-right: 48px; } }
+@media (max-width: 720px) {
+  .contact { padding: 48px 20px; }
+  .contact-fields { grid-template-columns: 1fr; }
+}
+
+/* Dedicated enquiry page: both contact methods are visible; no modal/popover. */
+.masthead h1 a { color: inherit; }
+.enquiry-page { max-width: 1000px; margin: 0 auto; padding: 52px 70px 72px; }
+.enquiry-page > section + section { margin-top: 44px; }
+.enquiry-title { margin: 10px 0 16px; font: 400 2.75rem/1.18 var(--serif); }
+.enquiry-lead { margin: 12px 0 16px; font: 400 1.45rem/1.45 var(--serif); }
+.enquiry-page p { line-height: 1.6; }
+.enquiry-page a:not(.btn) { color: #245138; text-decoration: underline; text-underline-offset: 3px; }
+.enquiry-page a:not(.btn):hover { color: var(--ochre-dk); }
+.enquiry-options { display: block; max-width: 640px; }
+.enquiry-option { background: #FFFDF8; border: 1px solid #B8A787; padding: 28px; display: flex;
+  flex-direction: column; align-items: flex-start; gap: 12px; }
+.enquiry-option h3 { margin: 0; font: 400 1.4rem/1.3 var(--serif); }
+.enquiry-option p { margin: 0; }
+.enquiry-option strong { overflow-wrap: anywhere; }
+.enquiry-option .btn { margin-top: auto; }
+.enquiry-hint { margin: 7px 0 0; font-size: .9rem; color: var(--ink-2); }
+.enquiry-form-section { padding: 34px 40px 40px; background: var(--cream-2); border: 1px solid var(--rule); }
+.enquiry-form-section > p { max-width: 65ch; }
+.enquiry-form-section .section-head h2 { font-size: 1.75rem; }
+.enquiry-form-section #contact-form { max-width: none; margin-top: 24px; gap: 24px; }
+.enquiry-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.enquiry-field label { color: var(--ink); font-weight: 600; }
+.enquiry-field .enquiry-hint { margin-top: 0; }
+#contact-form select { width: 100%; border: 2px solid #6B5B44; padding: 12px;
+  font: 1rem/1.4 var(--sans); background: white; color: #272018; border-radius: 2px; }
+#contact-form :is(input, select, textarea):focus-visible { outline: 3px solid #245138; outline-offset: 3px; }
+.enquiry-subhead { font: 400 1.4rem/1.2 var(--serif); margin: 12px 0 0; }
+.enquiry-form-section .contact-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.enquiry-back { margin-top: 36px; }
+#contact-status { font-weight: 600; }
+.contact-teaser { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 36px; align-items: center; }
+.contact-teaser p { max-width: 55ch; font: 400 1.125rem/1.55 var(--serif); }
+.contact-teaser .btn { white-space: nowrap; }
+@media (max-width: 720px) {
+  .enquiry-page { padding: 30px 20px 56px; }
+  .enquiry-options { grid-template-columns: 1fr; gap: 16px; }
+  .enquiry-option { padding: 24px; }
+  .enquiry-title { font-size: 2.1rem; }
+  .enquiry-lead { font-size: 1.2rem; }
+  .enquiry-form-section { padding: 26px 18px; }
+  .enquiry-form-section .contact-fields { grid-template-columns: 1fr; }
+  .contact-teaser { grid-template-columns: 1fr; gap: 12px; }
 }

@@ -36,10 +36,10 @@ STATUSES = {
     'few tickets left': 'Few tickets left',
     'selling fast': 'Selling fast',
 }
-SINGLE_FIELDS = ['title', 'company', 'tickets', 'ticket prices', 'image', 'website', 'summary',
+SINGLE_FIELDS = ['title', 'company', 'tickets', 'price', 'website', 'summary',
                  'suitable for', 'duration']
 URL_FIELDS = {'tickets', 'image', 'website'}
-JSON_NAMES = {'ticket prices': 'ticketPrices', 'tickets': 'ticketsUrl', 'website': 'websiteUrl',
+JSON_NAMES = {'tickets': 'ticketsUrl', 'website': 'websiteUrl',
               'suitable for': 'suitableFor'}
 
 
@@ -132,6 +132,17 @@ def show_fields(event: Event, notes: Notes, rep: Reporter) -> dict:
                 rep.add(event, 'warning', f'{key}: link starts with http://, not https://; check it works',
                         entries[0].line)
         fields[key] = value
+    # Multiple 'image:' lines make a poster carousel; validate each independently.
+    images = []
+    for entry in (e for e in notes.entries if e.key == 'image'):
+        problem = valid_url(entry.value)
+        if problem:
+            rep.add(event, 'error', f'image: {problem}, so it is not published', entry.line)
+        elif entry.value not in images:
+            images.append(entry.value)
+    if images:
+        fields['image'] = images[0]  # backwards compatibility
+        fields['images'] = images
     if 'title' not in fields:
         if not event.summary:
             rep.add(event, 'error', 'no "title:" line and the calendar entry has no title, so it is not published')
@@ -273,12 +284,8 @@ def schedule_lines(perfs: list[Performance]) -> list[dict]:
 
 def _near_misses_published(event: Event, notes: Notes, rep: Reporter):
     for line, text, key in notes.loose_keys:
-        if key == 'ticket prices' and not text.lower().startswith('ticket'):
-            rep.add(event, 'warning', f'"{text}" is not published. If it is the ticket price, '
-                                      f'write it as "ticket prices: …"', line)
-        else:
-            rep.add(event, 'warning', f'"{text}" looks like "{key}:" but is not written that way, '
-                                      f'so it is not published', line)
+        rep.add(event, 'warning', f'"{text}" looks like "{key}:" but is not written that way, '
+                                  f'so it is not published', line)
     if 'hide' in notes.flags:
         rep.add(event, 'warning', 'HIDE only applies to regular classes; ignored on a published show')
 
@@ -310,12 +317,16 @@ def venue_of(event: Event, venues: dict[str, str]) -> str | None:
 
 
 def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: dict | None = None,
-          venues: dict[str, str] | None = None) -> Output:
+          venues: dict[str, str] | None = None, include_drafts: bool = False) -> Output:
     venues = DEFAULT_VENUES if venues is None else venues
     tz: ZoneInfo = now.tzinfo
     today = now.date()
     week_start = today - dt.timedelta(days=today.weekday())
-    regulars_end = week_start + dt.timedelta(weeks=REGULAR_WEEKS)
+    # Display the remainder of this calendar month, with complete Mon–Sun
+    # week rows. Dates spilling into next month are not published as sessions.
+    next_month = (today.replace(day=28) + dt.timedelta(days=4)).replace(day=1)
+    weeks = ((next_month - week_start).days + 6) // 7
+    regulars_end = week_start + dt.timedelta(weeks=weeks)
     horizon = today + dt.timedelta(days=SHOW_HORIZON_DAYS)
     rep = Reporter()
 
@@ -338,6 +349,9 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
             for issue in notes.issues:
                 rep.add(event, issue.severity, issue.message, issue.line)
             _near_misses_published(event, notes, rep)
+            if notes.invalid_publish:
+                rep.add(event, 'error', 'show not published: fix the invalid instruction after Publish to website')
+                continue
             fields = show_fields(event, notes, rep)
             if not fields:
                 continue
@@ -354,6 +368,7 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
                 'event': event_ref(event),
                 'public': {k: v for k, v in fields.items()},
                 'featured': 'featured' in notes.flags,
+                'draft': 'draft' in notes.flags,
                 'schedule': schedule_lines(future),
                 'private': notes.private_lines,
             })
@@ -361,12 +376,21 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
                 if perfs:
                     rep.add(event, 'info', 'all performances have finished')
                 continue
-            key = fields['title'].strip().lower()
+            draft = 'draft' in notes.flags
+            if draft and not include_drafts:
+                continue  # Admin still reports this; the production feed must never include it.
+            key = (fields['title'].strip().lower(), draft)
             show = shows.get(key)
             if show is None:
-                shows[key] = {'fields': fields, 'perfs': perfs, 'featured': 'featured' in notes.flags}
+                shows[key] = {'fields': fields, 'perfs': perfs, 'featured': 'featured' in notes.flags, 'draft': draft}
             else:
                 for k, v in fields.items():
+                    if k == 'images':
+                        existing = show['fields'].setdefault('images', [])
+                        existing.extend(url for url in v if url not in existing)
+                        continue
+                    if k == 'image':
+                        continue
                     if show['fields'].get(k, v) != v:
                         rep.add(event, 'warning', f'another calendar entry for "{fields["title"]}" has a different '
                                                   f'{k}: "{show["fields"][k]}" is used')
@@ -377,7 +401,7 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
 
         rule = match_rule(event.summary, rules)
         if rule:
-            if not (today <= event.first_day < regulars_end):
+            if not (today <= event.first_day < next_month):
                 continue
             rule_use[rule.id].append(event.first_day)
             if 'hide' in notes.flags:
@@ -395,7 +419,7 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
                     rep.add(event, 'error', f'status: "{st.value}" is not one of: cancelled, sold out, '
                                             'few tickets left, selling fast', st.line)
             if notes.has_show_keywords() or notes.publish_like:
-                rep.add(event, 'warning', f'matches regular "{rule.name}" but has show details; add PUBLISH on '
+                rep.add(event, 'warning', f'matches regular "{rule.name}" but has show details; add Publish to website on '
                                           'its own line if it should be listed as a show')
             sessions.append({
                 'date': event.first_day.isoformat(),
@@ -412,14 +436,16 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
 
         # Not published: report near misses only.
         for line, text in notes.publish_like:
-            rep.add(event, 'warning', f'"{text}" mentions publishing, but PUBLISH must be on a line by itself; '
+            rep.add(event, 'warning', f'"{text}" mentions publishing, but a line saying Publish to website is required; '
                                       'not published', line)
         if not notes.publish_like and notes.has_show_keywords():
             keys = sorted({e.key + ':' for e in notes.entries if e.key in SHOW_KEYWORDS})
-            rep.add(event, 'warning', f'has show details ({", ".join(keys)}) but no PUBLISH line, so not published')
+            rep.add(event, 'warning', f'has show details ({", ".join(keys)}) but no Publish to website line, so not published')
         if 'featured' in notes.flags:
-            rep.add(event, 'warning', 'FEATURED has no effect without a PUBLISH line')
-        if today <= event.first_day < regulars_end and event.summary:
+            rep.add(event, 'warning', 'FEATURED has no effect without a Publish to website line')
+        if 'draft' in notes.flags:
+            rep.add(event, 'warning', 'DRAFT has no effect without a Publish to website line')
+        if today <= event.first_day < next_month and event.summary:
             # Regular classes are often separate entries with the same title
             # rather than a repeating event, so group by title.
             similar = similar_rule(event.summary, rules)
@@ -436,8 +462,7 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
 
     for r in rules:
         if not rule_use[r.id]:
-            rep.add(None, 'info', f'regular "{r.name}": no calendar entries containing "{r.match}" in the next '
-                                  f'{REGULAR_WEEKS} weeks')
+            rep.add(None, 'info', f'regular "{r.name}": no calendar entries containing "{r.match}" in the remainder of this month')
 
     # Public shows.
     show_list = []
@@ -452,6 +477,7 @@ def build(events: list[Event], rules: list[Rule], now: dt.datetime, sync_info: d
             'startDate': perfs[0].date.isoformat(),
             'endDate': perfs[-1].date.isoformat(),
             'featured': show['featured'],
+            'draft': show['draft'],
             'status': (next(iter(statuses)) or '') if len(statuses) == 1 else '',
             'schedule': schedule_lines(future),
             'performances': [{'date': p.date.isoformat(),

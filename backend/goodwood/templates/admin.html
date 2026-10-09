@@ -13,12 +13,20 @@
     what it last read. Error: {{ s.lastError }}</div>
 {% endif %}
 
+<h2 id="appearance">Curtain colour</h2>
+<form method="post" action="{{ url_for('save_appearance') }}" class="status">
+  <label for="curtain-colour">Main curtain colour</label>
+  <input id="curtain-colour" type="color" name="curtain" value="{{ curtain }}" aria-label="Choose curtain colour">
+  <button type="submit">Save colour</button>
+  <span class="muted">Default oxblood: #67192B. Updates the public website immediately.</span>
+</form>
+
 <h2 id="problems">Problems
   <span class="badge error">{{ r.counts.error }} errors</span>
   <span class="badge warning">{{ r.counts.warning }} warnings</span></h2>
 {% set problems = r.issues | rejectattr('severity', 'equalto', 'info') | list %}
 {% if problems %}
-<p class="muted">Errors are on entries marked PUBLISH: the problem part is left off the website. Warnings are
+<p class="muted">Errors are on entries marked Publish to website: the problem part is left off the website. Warnings are
   entries that might be meant for the website but aren't on it. Fix them in Google Calendar, then press
   <em>Refresh now</em>.</p>
 <table class="stack">
@@ -38,12 +46,12 @@
 <p>No problems found.</p>
 {% endif %}
 
-<h2 id="shows">Published shows ({{ r.published | length }})</h2>
-<p class="muted">Exactly what each calendar entry marked PUBLISH puts on the website. Anything under
+<h2 id="shows">Shows prepared for publication ({{ r.published | length }})</h2>
+<p class="muted">What each calendar entry marked Publish to website puts on the website; DRAFT entries appear only on test. Anything under
   “Kept private” is not published.</p>
 {% for p in r.published %}
 <div class="card">
-  <h3>{{ p.public.title }}{% if p.featured %} <span class="badge info">featured</span>{% endif %}</h3>
+  <h3>{{ p.public.title }}{% if p.featured %} <span class="badge info">featured</span>{% endif %}{% if p.draft %} <span class="badge warning">DRAFT: test only</span>{% endif %}</h3>
   <div class="muted">From calendar entry <a href="{{ p.event.link }}">{{ p.event.title }}</a> ({{ p.event.when }})</div>
   <dl>
     {% for k, v in p.public.items() if k != 'title' %}<dt>{{ k }}</dt><dd>{{ v }}</dd>{% endfor %}
@@ -56,14 +64,14 @@
   {% endif %}
 </div>
 {% else %}
-<p>No calendar entries are marked PUBLISH.</p>
+<p>No calendar entries are marked Publish to website.</p>
 {% endfor %}
 
 <h2 id="regulars">Regulars</h2>
 <p class="muted">Calendar entries whose title contains the text on the left are shown in the weekly timetable for
-  the next 4 weeks with this name, description and website. Nothing from their notes is published.</p>
+  the rest of the month with this name, description and website. Nothing from their notes is published.</p>
 <table class="stack">
-  <thead><tr><th>Calendar title contains</th><th>Public name</th><th>Activity</th><th>Website</th><th>Next 4 weeks</th><th></th></tr></thead>
+  <thead><tr><th>Calendar title contains</th><th>Public name</th><th>Activity</th><th>Website</th><th>This month</th><th></th></tr></thead>
   <tbody>
   {% for g in r.regulars %}{% set rule = g.rule %}
     <tr>
@@ -94,7 +102,7 @@
 
 {% if r.unmatched %}
 <h3 style="margin-top:1.5rem">Repeated entries not on the timetable</h3>
-<p class="muted">These titles come up more than once in the next 4 weeks but don't match any regular. Ignore them if
+<p class="muted">These titles come up more than once this month but don't match any regular. Ignore them if
   they are private.</p>
 <table class="stack">
   <thead><tr><th>Calendar title</th><th>Next</th><th>Times in next 4 weeks</th><th></th></tr></thead>
@@ -118,4 +126,8 @@
 {% endif %}
 <p class="muted">Public data: <a href="{{ url_for('shows') }}">shows.json</a> · <a href="{{ url_for('regulars') }}">regulars.json</a>
   · built {{ r.generated }}</p>
+<p class="muted" id="contacts"><strong>Website enquiries:</strong>
+  {% if contact_delivery.last_accepted %}Last enquiry sent for email delivery: {{ contact_delivery.last_accepted }}.{% else %}No enquiries emailed yet.{% endif %}
+  {% if contact_delivery.pending %}{{ contact_delivery.pending }} awaiting delivery{% if contact_delivery.needs_attention %} ({{ contact_delivery.needs_attention }} need attention){% endif %}.{% else %}No emails pending.{% endif %}
+</p>
 {% endblock %}
