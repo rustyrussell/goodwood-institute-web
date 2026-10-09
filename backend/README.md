@@ -2,7 +2,7 @@
 
 Reads the Institute's Google Calendar and publishes:
 
-- `/api/shows.json`: entries whose notes contain `Publish to website`, built only from recognised\n  instructions below that marker (earlier notes and unrecognised fields stay private);
+- `/api/shows.json`: entries whose notes contain `Publish to website`, built only from recognised\n  instructions after the marker until the first malformed non-blank line; the rest stay private;
 - `/api/regulars.json`: the rest of the calendar month of regular classes, matched by title against
   rules kept in the admin page;
 - `/admin/`: staff status page (problems, near misses, exactly what is published, regulars
