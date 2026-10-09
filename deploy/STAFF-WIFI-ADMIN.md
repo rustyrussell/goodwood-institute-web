@@ -21,7 +21,7 @@ handle /api/staff-status {
 @admin path /admin /admin/*
 handle @admin {
     @notStaff not remote_ip 192.168.2.0/24
-    basic_auth @notStaff {
+    basicauth @notStaff {
         admin YOUR_BCRYPT_HASH_HERE
     }
     reverse_proxy 127.0.0.1:8080
@@ -34,7 +34,7 @@ handle /api/* {
 file_server
 ```
 
-Run `caddy hash-password` interactively (password input is hidden),
+Caddy versions older than 2.8 use the `basicauth` directive; from 2.8\nonwards it is also known as `basic_auth`. This deployment uses the old name\nfor compatibility.\n\nRun `caddy hash-password` interactively (password input is hidden),
 and paste the resulting **hash** in place of `YOUR_BCRYPT_HASH_HERE`.
 Choose a new password rather than reusing the previously exposed
 `staging-only` test password. Never put the plaintext password in the
