@@ -5,9 +5,9 @@
 <p>In the show's Google Calendar entry, put <kbd>Publish to website</kbd> on a line of its own in the notes
   (the description). It can be any case and can end in a colon. Only lines <strong>after</strong> that marker are considered website instructions.</p>
 <p><strong>Only recognised fields after that marker go on the website.</strong> Private booking notes should stay above the marker.
-  The first unrecognised or incomplete non-blank line <strong>ends the website instructions</strong>:
-  that line and everything after it stays private. Blank lines are allowed. The
-  <a href="{{ url_for('admin') }}">status page</a> shows what will be published and flags mistakes.</p>
+  An unrecognised or incomplete non-blank line <strong>prevents the entire show from being published</strong>.
+  Blank lines are allowed. The <a href="{{ url_for('admin') }}">status page</a>
+  shows the problem to fix.</p>
 
 <h3>Example</h3>
 <pre class="private">Contact: Jane 0400 123 456 (private, not published)
@@ -22,7 +22,7 @@ doors open: 1.30pm
 show starts: 2pm
 show ends: 4.30pm
 tickets: https://www.trybooking.com/…
-ticket prices: $25, $20 concession
+price: $25, $20 concession
 summary: Wilde's comedy of mistaken identity.</pre>
 
 <h3>The lines</h3>
@@ -44,7 +44,7 @@ summary: Wilde's comedy of mistaken identity.</pre>
     <tr><td><code>doors open:</code></td><td>Time the doors open, e.g. <code>7pm</code>.</td></tr>
     <tr><td><code>show ends:</code></td><td>Time the show finishes, e.g. <code>10pm</code>. One time, or one for each show time.</td></tr>
     <tr><td><code>tickets:</code></td><td>Web address for buying tickets (starting <code>https://</code>).</td></tr>
-    <tr><td><code>ticket prices:</code></td><td>e.g. <code>$25, $20 concession</code>. (A line starting <code>price:</code> is <em>not</em> published, in case it's the hire price.)</td></tr>
+    <tr><td><code>price:</code></td><td>Ticket price information, e.g. <code>$25, $20 concession</code>.</td></tr>
     <tr><td><code>website:</code></td><td>The company's or show's web page.</td></tr>
     <tr><td><code>image:</code></td><td>Web address of a poster picture (portrait shape works best). Add more <code>image:</code> lines to create a carousel.</td></tr>
     <tr><td><code>summary:</code></td><td>One or two sentences about the show, on one line.</td></tr>
