@@ -116,7 +116,7 @@ def test_show_keywords_without_publish():
 
 
 def test_publish_is_case_insensitive_and_html_notes():
-    notes = 'Some private text<br>publish<br><b>show starts:</b> 7.30pm<br>tickets: <a href="https://tix.example.com/x">Book here</a>'
+    notes = 'Some private text<br>PuBLisH to Website:<br><b>show starts:</b> 7.30pm<br>tickets: <a href="https://tix.example.com/x">Book here</a>'
     out = build([ev('Show', dt.date(2026, 11, 14), notes=notes)], [], NOW)
     [show] = out.shows['shows']
     assert show['ticketsUrl'] == 'https://tix.example.com/x'
