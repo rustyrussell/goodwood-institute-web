@@ -25,7 +25,7 @@ def make_service(cfg: config_mod.Config) -> Service:
         source = FileCalendar(cfg.calendar_file)
     else:
         source = GoogleCalendar(cfg.calendar_id, cfg.credentials)
-    return Service(Store(cfg.database), source, ZoneInfo(cfg.timezone), cfg.refresh_seconds, venues=cfg.venues)
+    return Service(Store(cfg.database), source, ZoneInfo(cfg.timezone), cfg.refresh_seconds, venues=cfg.venues, include_drafts=cfg.include_drafts)
 
 
 def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
