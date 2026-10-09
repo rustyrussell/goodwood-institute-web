@@ -36,10 +36,10 @@ STATUSES = {
     'few tickets left': 'Few tickets left',
     'selling fast': 'Selling fast',
 }
-SINGLE_FIELDS = ['title', 'company', 'tickets', 'ticket prices', 'website', 'summary',
+SINGLE_FIELDS = ['title', 'company', 'tickets', 'price', 'website', 'summary',
                  'suitable for', 'duration']
 URL_FIELDS = {'tickets', 'image', 'website'}
-JSON_NAMES = {'ticket prices': 'ticketPrices', 'tickets': 'ticketsUrl', 'website': 'websiteUrl',
+JSON_NAMES = {'price': 'ticketPrices', 'tickets': 'ticketsUrl', 'website': 'websiteUrl',
               'suitable for': 'suitableFor'}
 
 
@@ -284,12 +284,8 @@ def schedule_lines(perfs: list[Performance]) -> list[dict]:
 
 def _near_misses_published(event: Event, notes: Notes, rep: Reporter):
     for line, text, key in notes.loose_keys:
-        if key == 'ticket prices' and not text.lower().startswith('ticket'):
-            rep.add(event, 'warning', f'"{text}" is not published. If it is the ticket price, '
-                                      f'write it as "ticket prices: …"', line)
-        else:
-            rep.add(event, 'warning', f'"{text}" looks like "{key}:" but is not written that way, '
-                                      f'so it is not published', line)
+        rep.add(event, 'warning', f'"{text}" looks like "{key}:" but is not written that way, '
+                                  f'so it is not published', line)
     if 'hide' in notes.flags:
         rep.add(event, 'warning', 'HIDE only applies to regular classes; ignored on a published show')
 
