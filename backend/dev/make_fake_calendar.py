@@ -50,7 +50,7 @@ run_end = run_start + dt.timedelta(days=9)
 add('Earnest - Sample Theatre Co (hire)', run_start, run_end + dt.timedelta(days=1), """Hirer: Jane Smith 0400 123 456
 Invoice 1234 - deposit paid, balance due 1 week before
 Price: $1,200 hire + $500 bond
-PUBLISH
+Publish to website
 FEATURED
 title: The Importance of Being Earnest
 company: Sample Theatre Company
