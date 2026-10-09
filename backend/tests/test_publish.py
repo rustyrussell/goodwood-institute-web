@@ -37,6 +37,7 @@ def issues(out, severity=None):
 
 EARNEST = """Hirer: Jane Smith 0400 123 456
 Invoice 1234 unpaid – chase!
+Price: $1,200 hire + $500 bond
 Publish to website
 title: The Importance of Being Earnest
 company: Sample Theatre Company
@@ -47,8 +48,7 @@ dates: Sun 22 Nov
 doors open: 1.30pm
 show starts: 2pm
 tickets: https://example.com/tix
-ticket prices: $25 / $20 conc
-Price: $1,200 hire + $500 bond
+price: $25 / $20 conc
 """
 
 
@@ -66,8 +66,7 @@ def test_show_with_matinee_block():
         {'dates': 'Sun 22 Nov', 'time': '2pm', 'doors': '1.30pm', 'status': ''},
     ]
     assert len(show['performances']) == 9
-    # The hire price line is a near miss, reported but not published.
-    assert any('ticket prices' in m for m in issues(out, 'warning'))
+    assert issues(out, 'error') == []
 
 
 def test_private_notes_never_published():
@@ -345,13 +344,10 @@ def test_unknown_line_ends_public_fields_even_when_later_lines_are_valid():
                  'tickets: https://example.org/private\n'
                  'summary: This was never authorised for publication')
     out = build([e], [], NOW)
-    [show] = out.shows['shows']
-    assert show['title'] == 'Public title'
-    assert 'ticketsUrl' not in show
-    assert 'summary' not in show
-    [p] = out.report['published']
-    assert 'tickets: https://example.org/private' in p['private']
-    assert any('public instructions stop here' in x for x in issues(out, 'warning'))
+    assert out.shows['shows'] == []
+    assert out.report['published'] == []
+    assert any('not a recognised website instruction' in x for x in issues(out, 'error'))
+    assert any('show not published' in x for x in issues(out, 'error'))
 
 
 def test_blank_lines_are_not_end_markers():
@@ -372,6 +368,7 @@ def test_empty_or_overlong_fields_end_public_instructions():
         assert n.first('tickets') is None
         assert 'tickets: https://example.org/private' in n.private_lines
         assert n.issues
+        assert n.invalid_publish
 
 
 def test_misspelled_field_stops_public_parsing():
@@ -380,6 +377,7 @@ def test_misspelled_field_stops_public_parsing():
         'summary: Hidden text')
     assert n.first('summary') is None
     assert n.loose_keys[0][2] == 'tickets'
+    assert n.invalid_publish
 
 
 def test_publish_marker_after_unknown_line_does_not_reopen_publication():
@@ -389,6 +387,7 @@ def test_publish_marker_after_unknown_line_does_not_reopen_publication():
     assert n.first('title').value == 'Public'
     assert n.first('summary') is None
     assert 'Publish to website' in n.private_lines
+    assert n.invalid_publish
 
 
 def test_duplicate_publish_marker_stops_public_parsing():
@@ -398,6 +397,7 @@ def test_duplicate_publish_marker_stops_public_parsing():
     assert n.first('title').value == 'Public'
     assert n.first('summary') is None
     assert any('duplicate' in x.message for x in n.issues)
+    assert n.invalid_publish
 
 
 def test_never_publish_unrecognised_line_below_marker():
@@ -406,4 +406,27 @@ def test_never_publish_unrecognised_line_below_marker():
     out = build([e], [], NOW)
     assert 'secret' not in json.dumps(out.shows)
     assert 'A good show.' not in json.dumps(out.shows)
-    assert any('not a recognised website instruction' in x for x in issues(out, 'warning'))
+    assert out.shows['shows'] == []
+    assert any('not a recognised website instruction' in x for x in issues(out, 'error'))
+
+
+def test_price_is_explicit_public_field_without_ticket_qualifier():
+    text = (
+        'Private contract price: $1,200\\n'
+        'Publish to website\\n'
+        'title: A Show\\n'
+        'price: $25 / $20 concession\\n'
+        'tickets: https://example.org/book'
+    )
+    out = build([ev('Private hire title', dt.date(2026, 11, 14), notes=text)], [], NOW)
+    [show] = out.shows['shows']
+    assert show['title'] == 'A Show'
+    assert show['ticketPrices'] == '$25 / $20 concession'
+    assert '1,200' not in json.dumps(out.shows)
+    assert issues(out, 'error') == []
+
+
+def test_old_ticket_prices_spelling_still_accepted():
+    out = build([ev('Show', dt.date(2026, 11, 14),
+                    notes='Publish to website\\nticket prices: $30')], [], NOW)
+    assert out.shows['shows'][0]['ticketPrices'] == '$30'
