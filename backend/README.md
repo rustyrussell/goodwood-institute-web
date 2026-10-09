@@ -4,7 +4,7 @@ Reads the Institute's Google Calendar and publishes:
 
 - `/api/shows.json`: entries whose notes contain a `PUBLISH` line, built only from recognised
   `keyword: value` lines (everything else in the notes stays private);
-- `/api/regulars.json`: the next 4 calendar weeks of regular classes, matched by title against
+- `/api/regulars.json`: the rest of the calendar month of regular classes, matched by title against
   rules kept in the admin page;
 - `/admin/`: staff status page (problems, near misses, exactly what is published, regulars
   editor) and `/admin/guide`, the notes cheat sheet for whoever edits the calendar.
