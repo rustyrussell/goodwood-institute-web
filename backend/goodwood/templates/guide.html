@@ -5,8 +5,9 @@
 <p>In the show's Google Calendar entry, put <kbd>Publish to website</kbd> on a line of its own in the notes
   (the description). It can be any case and can end in a colon. Only lines <strong>after</strong> that marker are considered website instructions.</p>
 <p><strong>Only recognised fields after that marker go on the website.</strong> Private booking notes should stay above the marker.
-  Unrecognised instructions are flagged and kept private. The <a href="{{ url_for('admin') }}">status page</a>
-  shows exactly what will be published and lists anything that looks wrong.</p>
+  The first unrecognised or incomplete non-blank line <strong>ends the website instructions</strong>:
+  that line and everything after it stays private. Blank lines are allowed. The
+  <a href="{{ url_for('admin') }}">status page</a> shows what will be published and flags mistakes.</p>
 
 <h3>Example</h3>
 <pre class="private">Contact: Jane 0400 123 456 (private, not published)
