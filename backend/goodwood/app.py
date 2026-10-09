@@ -35,6 +35,11 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
     service = service or make_service(cfg)
     app.config['service'] = service
 
+    SPACE_CHOICES = {
+        'Main Theatre', 'Studio Theatre', 'Little Reid',
+        'Whole venue or several spaces', 'Not sure yet — please advise',
+        'General enquiry (not venue hire)',
+    }
     DEFAULT_CURTAIN = '#67192B'  # oxblood
     HEX = re.compile(r'^#[0-9a-fA-F]{6}$')
 
@@ -82,13 +87,16 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
         name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip()
         phone = request.form.get('phone', '').strip()
+        space = request.form.get('space', '').strip()
+        dates = request.form.get('dates', '').strip()
         message = request.form.get('message', '').strip()
         if not (2 <= len(name) <= 120 and len(email) <= 254 and
                 re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email) and
-                len(phone) <= 60 and 10 <= len(message) <= 5000):
-            return jsonify({'error': 'Please enter your name, email address and a message of at least 10 characters.'}), 400
+                len(phone) <= 60 and space in SPACE_CHOICES and len(dates) <= 500
+                and 10 <= len(message) <= 5000):
+            return jsonify({'error': 'Please choose an enquiry type and enter your name, email address and a short message.'}), 400
         try:
-            service.store.save_contact(name, email, phone, message)
+            service.store.save_contact(name, email, phone, message, space=space, dates=dates)
         except ValueError as exc:
             return jsonify({'error': str(exc)}), 429
         return jsonify({'ok': True}), 201
