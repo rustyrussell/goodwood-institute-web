@@ -55,7 +55,7 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
         @wraps(view)
         def wrapped(*args, **kwargs):
             auth = request.authorization
-            if not auth or not hmac.compare_digest((auth.password or '').encode(), cfg.admin_password.encode()):
+            if cfg.admin_password and (not auth or not hmac.compare_digest((auth.password or '').encode(), cfg.admin_password.encode())):
                 return Response('Staff login required', 401, {'WWW-Authenticate': 'Basic realm="Goodwood admin"'})
             if request.method == 'POST':
                 # Basic auth is sent automatically by the browser, so refuse
