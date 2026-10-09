@@ -140,8 +140,11 @@ def parse_notes(description: str | None) -> Notes:
             if lower == 'hide':
                 notes.flags.add('hide')
             m = _KEY_LINE.match(line)
-            if m and _clean(m.group(1)).lower() == 'status':
-                notes.entries.append(Entry('status', _clean(m.group(2)), lineno))
+            if m and _clean(m.group(1)).lower() in ALIASES:
+                # Retained only for unmarked-entry diagnostics or regular
+                # status; entirely cleared if a publication marker follows.
+                key = ALIASES[_clean(m.group(1)).lower()]
+                notes.entries.append(Entry(key, _clean(m.group(2)), lineno))
             if re.search(r'\bpublish\b', lower):
                 notes.publish_like.append((lineno, line))
             elif m and (_clean(m.group(1)).lower() in ALIASES):
