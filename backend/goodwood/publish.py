@@ -39,7 +39,7 @@ STATUSES = {
 SINGLE_FIELDS = ['title', 'company', 'tickets', 'price', 'website', 'summary',
                  'suitable for', 'duration']
 URL_FIELDS = {'tickets', 'image', 'website'}
-JSON_NAMES = {'price': 'ticketPrices', 'tickets': 'ticketsUrl', 'website': 'websiteUrl',
+JSON_NAMES = {'tickets': 'ticketsUrl', 'website': 'websiteUrl',
               'suitable for': 'suitableFor'}
 
 
