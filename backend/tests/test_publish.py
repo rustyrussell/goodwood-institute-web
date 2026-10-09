@@ -132,7 +132,7 @@ def test_errors_are_reported():
     assert any('not a web address' in m for m in errs)
     assert any('nearly full' in m for m in errs)
     assert any('"tixkets: https://x.com" looks like "tickets:"' in m for m in issues(out, 'warning'))
-    assert 'ticketsUrl' not in out.shows['shows'][0]
+    assert out.shows['shows'] == []  # the unrecognised 'tixkets' line rejects the show
 
 
 def test_doors_after_start():
@@ -412,10 +412,10 @@ def test_never_publish_unrecognised_line_below_marker():
 
 def test_price_is_explicit_public_field_without_ticket_qualifier():
     text = (
-        'Private contract price: $1,200\\n'
-        'Publish to website\\n'
-        'title: A Show\\n'
-        'price: $25 / $20 concession\\n'
+        'Private contract price: $1,200\n'
+        'Publish to website\n'
+        'title: A Show\n'
+        'price: $25 / $20 concession\n'
         'tickets: https://example.org/book'
     )
     out = build([ev('Private hire title', dt.date(2026, 11, 14), notes=text)], [], NOW)
@@ -428,5 +428,5 @@ def test_price_is_explicit_public_field_without_ticket_qualifier():
 
 def test_old_ticket_prices_spelling_still_accepted():
     out = build([ev('Show', dt.date(2026, 11, 14),
-                    notes='Publish to website\\nticket prices: $30')], [], NOW)
+                    notes='Publish to website\nticket prices: $30')], [], NOW)
     assert out.shows['shows'][0]['ticketPrices'] == '$30'
