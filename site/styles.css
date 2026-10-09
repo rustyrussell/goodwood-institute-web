@@ -127,6 +127,7 @@ a.session:hover .n { color: var(--green); }
 
 /* Forms deliberately use dark text and solid outlines; no reduced-opacity text. */
 .contact { background: var(--cream-2); padding: 64px 96px 72px; }
+.contact .section-head h2 { max-width: 25em; line-height: 1.25; }
 .contact-intro { font: 400 1.4rem/1.5 var(--serif); max-width: 45em; margin: 10px 0 24px; }
 #contact-form { display: flex; flex-direction: column; gap: 20px; max-width: 800px; }
 #contact-form label { display: flex; flex-direction: column; gap: 7px; font-weight: 600; color: var(--ink); }
