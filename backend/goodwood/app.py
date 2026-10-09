@@ -58,6 +58,12 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
     def regulars():
         return public_json(service.output().regulars)
 
+    @app.get('/api/hire-rates.pdf')
+    def hire_rates():
+        # Static PDF is in the repository docs/ directory, not site/.
+        return send_from_directory(Path(__file__).resolve().parents[2] / 'docs',
+                                   'rates-2026-2027.pdf')
+
     @app.get('/api/appearance.json')
     def appearance():
         colour = service.store.get('curtain_color') or DEFAULT_CURTAIN
