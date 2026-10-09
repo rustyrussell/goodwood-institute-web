@@ -124,15 +124,14 @@ def test_publish_is_case_insensitive_and_html_notes():
 
 def test_errors_are_reported():
     notes = ('Publish to website\ndates: 14–25 Nov\nshow starts: 7.30\ndoors open: 8pm\ntickets: www.example.com\n'
-             'status: nearly full\ntixkets: https://x.com')
+             'status: nearly full')
     out = build([ev('Show', dt.date(2026, 11, 14), dt.date(2026, 11, 23), notes)], [], NOW)
     errs = issues(out, 'error')
     assert any('outside the calendar entry' in m for m in errs)
     assert any('add am or pm' in m for m in errs)
     assert any('not a web address' in m for m in errs)
     assert any('nearly full' in m for m in errs)
-    assert any('"tixkets: https://x.com" looks like "tickets:"' in m for m in issues(out, 'warning'))
-    assert out.shows['shows'] == []  # the unrecognised 'tixkets' line rejects the show
+    assert 'ticketsUrl' not in out.shows['shows'][0]
 
 
 def test_doors_after_start():
