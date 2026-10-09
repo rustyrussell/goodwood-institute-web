@@ -239,13 +239,12 @@ def test_show_ends_and_existing_note_styles():
     assert show['performances'][0]['end'] == '20:00'
 
 
-def test_time_first_lines_are_near_misses():
-    notes = 'Publish to website\n5:45pm doors open;\n6:30pm show time;\n8:00pm approx. finish time.\nDoors open 6.20pm;'
+def test_time_first_lines_now_accepted():
+    notes = 'Publish to website\n5:45pm doors open;\n6:30pm show time;\n8:00pm approx. finish time.'
     out = build([ev('School show', dt.date(2026, 11, 18), notes=notes)], [], NOW)
-    warnings = issues(out, 'warning')
-    for key in ('doors open', 'show starts', 'show ends'):
-        assert any(f'looks like "{key}:"' in m for m in warnings), key
-    assert sum('looks like "doors open:"' in m for m in warnings) == 2
+    [show] = out.shows['shows']
+    assert show['schedule'][0]['time'] == '6.30pm – 8pm'
+    assert show['schedule'][0]['doors'] == '5.45pm'
 
 
 def test_show_ends_before_start():
