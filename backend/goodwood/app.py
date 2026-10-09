@@ -41,7 +41,7 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
     def same_origin() -> bool:
         origin = request.headers.get('Origin') or request.headers.get('Referer') or ''
         # Caddy terminates TLS, so Flask's request.scheme may still be http.
-        return urlsplit(origin).netloc == request.host and urlsplit(origin).scheme == 'https'
+        return urlsplit(origin).netloc == request.host and urlsplit(origin).scheme in ('https', request.scheme)
 
     # ------------------------------------------------------------ public API
 
