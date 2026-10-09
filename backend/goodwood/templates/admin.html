@@ -43,6 +43,9 @@
     <button type="submit">Retry email now</button>
   </form>
   {% endif %}
+  <p><strong>Space / enquiry type:</strong> {{ c.space or 'Not specified' }}</p>
+  <p><strong>Preferred dates / times:</strong> {{ c.dates or 'Not yet known' }}</p>
+  <p><strong>Details:</strong></p>
   <div class="private">{{ c.message }}</div>
   <form method="post" action="{{ url_for('contact_handled', contact_id=c.id) }}">
     <button type="submit">Mark as handled</button>
