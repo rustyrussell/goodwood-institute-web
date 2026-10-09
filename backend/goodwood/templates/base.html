@@ -55,7 +55,7 @@ code, kbd { background: var(--cream-2); padding: 0 0.25rem; }
 <body>
 <header>
   <h1>Goodwood website admin</h1>
-  <nav aria-label="Admin"><a href="{{ url_for('admin') }}">Status</a><a href="{{ url_for('guide') }}">How to write notes</a><a href="{{ url_for('admin') }}#contacts">Enquiries</a><a href="{{ url_for('admin') }}#appearance">Curtain</a></nav>
+  <nav aria-label="Admin"><a href="{{ url_for('admin') }}">Status</a><a href="{{ url_for('guide') }}">How to write notes</a><a href="{{ url_for('admin') }}#appearance">Curtain</a></nav>
 </header>
 <main>
 {% for category, message in get_flashed_messages(with_categories=true) %}
