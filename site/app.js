@@ -74,7 +74,7 @@ function renderFeature(s) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const label = parse(s.startDate) <= today ? 'Now playing' : 'Next on stage';
   const times = (s.schedule || []).map(l => esc(scheduleLine(l))).join('<br>');
-  const facts = [['Dates', esc(longRange(s.startDate, s.endDate))], ['Times', times], ['Venue', esc(s.venue)], ['Tickets', esc(s.ticketPrices)],
+  const facts = [['Dates', esc(longRange(s.startDate, s.endDate))], ['Times', times], ['Venue', esc(s.venue)], ['Tickets', esc(s.price)],
     ['Suitable for', esc(s.suitableFor)], ['Duration', esc(s.duration)]].filter(f => f[1]);
   el.innerHTML = `${poster(s)}
     <div class="feature-text">
