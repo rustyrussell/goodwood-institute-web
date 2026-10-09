@@ -47,7 +47,7 @@ PRICE_WORDS = {'price': 'ticket prices', 'prices': 'ticket prices', 'cost': 'tic
 MAX_LENGTH = {'summary': 400, 'tickets': 2000, 'image': 2000, 'website': 2000}
 DEFAULT_MAX_LENGTH = 120
 
-_KEY_LINE = re.compile(r'^([A-Za-z][A-Za-z ]{0,30}?)\s*(?::|=|\s[-–—]\s)\s*(.*)
+_KEY_LINE = re.compile(r'^([A-Za-z][A-Za-z ]{0,30}?)\s*(?::|=|\s[-–—]\s)\s*(.*)$')
 _LOOSE_KEY_LINE = re.compile(r'^([A-Za-z][A-Za-z ]{0,24}?)\s*(?:[:=]|\s[-–—]\s|\s-|-\s)\s*(.*)$')
 _TIME_FIRST = re.compile(r'^(\d{1,2}(?:[.:]\d\d)?\s*(?:am|pm))\s+(?:approx\.?\s+|approximate\s+)?([a-z ]+?)[;,.]?$')
 _BULLET = re.compile(r'^\s*(?:[-*•·]\s+)')
