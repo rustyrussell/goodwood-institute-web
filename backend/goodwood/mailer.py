@@ -30,8 +30,10 @@ def message_for(contact: dict, cfg: Config) -> EmailMessage:
         f'New enquiry from the Goodwood Institute website (# {contact["id"]})\n\n'
         f'Name: {contact["name"]}\n'
         f'Email: {contact["email"]}\n'
-        f'Phone: {contact["phone"] or "(not provided)"}\n\n'
-        f'Message:\n{contact["message"]}\n\n'
+        + (f'Phone: {contact["phone"]}\n' if contact["phone"] else '')
+        + f'Space or enquiry type: {contact["space"] or "(not specified)"}\n'
+        + f'Preferred dates/times: {contact["dates"] or "(not yet known)"}\n\n'
+        + f'Details:\n{contact["message"]}\n\n'
         'This enquiry is also saved in the private website admin inbox.\n'
         'Please reply to the visitor, not to website@goodwoodinstitute.asn.au.\n'
     )
