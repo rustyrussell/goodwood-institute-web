@@ -20,7 +20,7 @@
     <a href="#hire">Hire</a><span class="sep" aria-hidden="true">◆</span>
     <a href="#whats-on">What's on</a><span class="sep" aria-hidden="true">◆</span>
     <a href="#week">This month</a><span class="sep" aria-hidden="true">◆</span>
-    <a href="#contact">Contact</a>
+    <a href="/contact.html">Contact</a>
     <a href="/admin/" id="staff-admin-link" hidden>Admin</a>
   </nav>
 
@@ -32,7 +32,7 @@
       </div>
       <div class="buttons">
         <a class="btn btn-solid" href="/api/hire-rates.pdf">Hire rates 2026–27</a>
-        <a class="btn btn-line" href="#contact">Enquire now</a>
+        <a class="btn btn-line" href="/contact.html">Ask about hiring</a>
       </div>
     </section>
 
@@ -55,27 +55,17 @@
     </section>
 
 
-
-    <section class="contact" id="contact" aria-labelledby="contact-h">
-      <div class="section-head"><h2 id="contact-h">We are flexible and have multiple spaces on offer: be sure to reach out to our friendly staff!</h2></div>
-      <p class="contact-intro">Tell us about your event or what you need from a space, and our team will get back to you.</p>
-      <form id="contact-form" action="/api/contact" method="post">
-        <div class="contact-fields">
-          <label>Name <input name="name" type="text" autocomplete="name" maxlength="120" required></label>
-          <label>Email <input name="email" type="email" autocomplete="email" maxlength="254" required></label>
-          <label>Phone <span class="optional">(optional)</span><input name="phone" type="tel" autocomplete="tel" maxlength="60"></label>
-        </div>
-        <label>What would you like to ask us?
-          <textarea name="message" rows="5" minlength="10" maxlength="5000" required></textarea>
-        </label>
-        <div class="contact-trap" aria-hidden="true"><label>Leave this field empty <input name="website" tabindex="-1" autocomplete="off"></label></div>
-        <div class="contact-actions"><button class="btn btn-solid" type="submit">Send enquiry</button><span id="contact-status" role="status" aria-live="polite"></span></div>
-      </form>
+    <section class="contact contact-teaser" aria-labelledby="contact-h">
+      <div>
+        <div class="section-head"><h2 id="contact-h">Have a question?</h2></div>
+        <p>We are flexible and have multiple spaces on offer: be sure to reach out to our friendly staff!</p>
+      </div>
+      <a class="btn btn-solid" href="/contact.html">Get in touch</a>
     </section>
   </main>
 
   <footer class="footer">
-    <span>166 Goodwood Road, Goodwood SA 5034 · <a href="tel:+61882723036">8272&nbsp;3036</a> · <a href="mailto:bookings@goodwoodinstitute.asn.au">bookings@goodwoodinstitute.asn.au</a></span>
+    <span>166 Goodwood Road, Goodwood SA 5034 · <a href="tel:+61882723036">8272&nbsp;3036</a> · <a href="/contact.html">Contact our team</a></span>
     <span class="motto" lang="la">Non Sibi Sed Arti</span>
   </footer>
 </div>
