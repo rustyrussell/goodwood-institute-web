@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import secrets
+from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -119,9 +120,15 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
     def admin():
         out = service.output()
         prefill = {k: request.args.get(k, '') for k in ('match', 'name')}
+        delivery = service.store.contact_delivery_summary()
+        if delivery['last_accepted']:
+            # SQLite's datetime('now') is UTC. Staff see the venue's local time.
+            when = datetime.fromisoformat(delivery['last_accepted'])
+            when = when.replace(tzinfo=timezone.utc).astimezone(ZoneInfo(cfg.timezone))
+            delivery['last_accepted'] = f"{when.day} {when:%b %Y}, {when.hour % 12 or 12}:{when:%M %p}"
         return render_template('admin.html', r=out.report, prefill=prefill,
                                curtain=service.store.get('curtain_color') or DEFAULT_CURTAIN,
-                               contact_delivery=service.store.contact_delivery_summary())
+                               contact_delivery=delivery)
 
     @app.post('/admin/appearance')
     @admin_only
