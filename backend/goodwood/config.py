@@ -16,6 +16,7 @@ class Config:
     database: str = 'var/goodwood.db'
     timezone: str = 'Australia/Adelaide'
     refresh_seconds: float = 30
+    include_drafts: bool = False # only enable on test deployments
     site_dir: str = ''              # development: serve the static site too
     venues: dict | None = None      # Google event colour ID -> venue name (None: built-in defaults)
 
@@ -38,6 +39,7 @@ def load(path: str | None = None) -> Config:
         timezone=app.get('timezone', Config.timezone),
         refresh_seconds=float(app.get('refresh_seconds', Config.refresh_seconds)),
         site_dir=rel(app.get('site_dir', '')),
+        include_drafts=bool(app.get('include_drafts', False)),
         venues={str(k): v for k, v in data['venues'].items()} if 'venues' in data else None,
     )
     if not cfg.calendar_file and not (cfg.calendar_id and cfg.credentials):
