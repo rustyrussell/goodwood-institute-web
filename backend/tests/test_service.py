@@ -154,7 +154,7 @@ def test_public_contact_is_private_and_staff_can_handle():
     admin_html = c.get('/admin/', headers=AUTH).get_data(as_text=True)
     assert 'Website enquiries:' in admin_html
     assert '1 awaiting delivery' in admin_html
-    assert 'No emails sent yet' in admin_html
+    assert 'No enquiries emailed yet' in admin_html
     assert 'Can we hire the theatre?' not in admin_html
     assert 'visitor@example.org' not in admin_html
     assert admin_html.index('Website enquiries:') > admin_html.index('Regulars')
@@ -164,8 +164,8 @@ def test_public_contact_is_private_and_staff_can_handle():
     svc.store.mark_emailed(msg['id'])
     assert svc.store.contacts() == []
     delivered = c.get('/admin/', headers=AUTH).get_data(as_text=True)
-    assert 'Last email accepted by relay:' in delivered
-    assert 'None pending.' in delivered
+    assert 'Last enquiry sent for email delivery:' in delivered
+    assert 'No emails pending.' in delivered
 
 
 def test_admin_enquiry_summary_flags_unresolved_delivery_without_exposing_details():
@@ -179,7 +179,7 @@ def test_admin_enquiry_summary_flags_unresolved_delivery_without_exposing_detail
         store.mark_email_failed(second['id'], 'SMTP diagnostic that staff should not see')
     assert store.contact_delivery_summary()['needs_attention'] == 1
     page = c.get('/admin/', headers=AUTH).get_data(as_text=True)
-    assert 'Last email accepted by relay:' in page
+    assert 'Last enquiry sent for email delivery:' in page
     assert '1 awaiting delivery' in page
     assert '1 need attention' in page
     assert 'SMTP diagnostic' not in page
