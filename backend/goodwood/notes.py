@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 
 # Lines that are a single word on their own.
 FLAGS = {'featured', 'hide', 'draft'}
-PUBLISH_MARKER = re.compile(r'^publish\s+to\s+(?:the\s+)?website\s*(?::\s*(?:yes|true|on)?)?\s*[.!]?
+PUBLISH_MARKER = re.compile(r'^publish\s+to\s+(?:the\s+)?website\s*(?::\s*(?:yes|true|on)?)?\s*[.!]?$', re.I)
 
 # Canonical keyword -> accepted spellings.  Deliberately no generic words like
 # "notes", "info", "description" or "price": those are likely to already be in
