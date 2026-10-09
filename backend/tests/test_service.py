@@ -151,6 +151,8 @@ def test_public_contact_is_private_and_staff_can_handle():
     assert c.get('/admin/', headers=AUTH).status_code == 200
     assert c.post(f"/admin/contacts/{msg['id']}/handled",
                   headers={**AUTH, 'Origin': 'http://localhost'}).status_code == 302
+    assert svc.store.contacts()[0]['handled'] == 1  # remains visible until emailed
+    svc.store.mark_emailed(msg['id'])
     assert svc.store.contacts() == []
 
 
