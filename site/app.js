@@ -166,30 +166,3 @@ fetch('/api/appearance.json', { cache: 'no-store' })
     if (theme && /^#[0-9a-fA-F]{6}$/.test(theme.curtain))
       document.documentElement.style.setProperty('--curtain-base', theme.curtain);
   }).catch(() => {});
-
-// Contact requests are held in the private website admin inbox.
-const contactForm = document.getElementById('contact-form');
-contactForm?.addEventListener('submit', async event => {
-  event.preventDefault();
-  const button = contactForm.querySelector('button[type="submit"]');
-  const status = document.getElementById('contact-status');
-  button.disabled = true;
-  status.textContent = 'Sending…';
-  try {
-    const response = await fetch(contactForm.action, {
-      method: 'POST', body: new FormData(contactForm),
-      headers: { Accept: 'application/json' },
-      credentials: 'same-origin'
-    });
-    if (!response.ok) {
-      const detail = await response.json().catch(() => ({}));
-      throw new Error(detail.error || 'Unable to send your enquiry. Please try again.');
-    }
-    contactForm.reset();
-    status.textContent = 'Thank you. Your enquiry has been received.';
-  } catch (error) {
-    status.textContent = error.message + ' Or email bookings@goodwoodinstitute.asn.au.';
-  } finally {
-    button.disabled = false;
-  }
-});
