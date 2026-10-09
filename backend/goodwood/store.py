@@ -18,6 +18,8 @@ CREATE TABLE IF NOT EXISTS contact_messages (
     email TEXT NOT NULL,
     phone TEXT NOT NULL DEFAULT '',
     message TEXT NOT NULL,
+    space TEXT NOT NULL DEFAULT '',
+    dates TEXT NOT NULL DEFAULT '',
     handled INTEGER NOT NULL DEFAULT 0,
     emailed_at TEXT,
     email_attempts INTEGER NOT NULL DEFAULT 0,
@@ -43,6 +45,8 @@ class Store:
         # SQLite's CREATE TABLE IF NOT EXISTS doesn't add columns to old databases.
         existing = {col[1] for col in self._db.execute('PRAGMA table_info(contact_messages)')}
         for column, definition in (
+            ('space', "TEXT NOT NULL DEFAULT ''"),
+            ('dates', "TEXT NOT NULL DEFAULT ''"),
             ('emailed_at', 'TEXT'),
             ('email_attempts', 'INTEGER NOT NULL DEFAULT 0'),
             ('next_email_attempt', 'TEXT'),
@@ -109,7 +113,8 @@ class Store:
 
     # ---- contact enquiries / durable SMTP delivery queue (never public JSON)
 
-    def save_contact(self, name: str, email: str, phone: str, message: str) -> None:
+    def save_contact(self, name: str, email: str, phone: str, message: str,
+                     space: str = '', dates: str = '') -> None:
         with self._lock, self._db:
             # Limit abuse without trusting potentially forged proxy IP headers.
             recent_total = self._db.execute(
@@ -122,19 +127,19 @@ class Store:
             if recent_total >= 60 or recent_sender >= 4:
                 raise ValueError('Too many enquiries recently. Please email bookings@goodwoodinstitute.asn.au.')
             self._db.execute(
-                'INSERT INTO contact_messages (name, email, phone, message) VALUES (?, ?, ?, ?)',
-                (name, email, phone, message)
+                'INSERT INTO contact_messages (name, email, phone, message, space, dates) VALUES (?, ?, ?, ?, ?, ?)',
+                (name, email, phone, message, space, dates)
             )
 
     def contacts(self) -> list[dict]:
         # Unsent enquiries remain visible even if staff marked them handled.
         with self._lock:
             cur = self._db.execute(
-                'SELECT id, created, name, email, phone, message, emailed_at, email_attempts, '
+                'SELECT id, created, name, email, phone, message, space, dates, emailed_at, email_attempts, '
                 'last_email_error, handled FROM contact_messages '
                 'WHERE handled = 0 OR emailed_at IS NULL ORDER BY id DESC LIMIT 100'
             )
-            return [dict(zip(('id', 'created', 'name', 'email', 'phone', 'message',
+            return [dict(zip(('id', 'created', 'name', 'email', 'phone', 'message', 'space', 'dates',
                               'emailed_at', 'email_attempts', 'last_email_error', 'handled'), row))
                     for row in cur]
 
@@ -145,12 +150,12 @@ class Store:
     def pending_emails(self) -> list[dict]:
         with self._lock:
             cur = self._db.execute(
-                'SELECT id, name, email, phone, message FROM contact_messages '
+                'SELECT id, name, email, phone, message, space, dates FROM contact_messages '
                 'WHERE emailed_at IS NULL AND email_attempts < 12 '
                 "AND (next_email_attempt IS NULL OR next_email_attempt <= datetime('now')) "
                 'ORDER BY id LIMIT 20'
             )
-            return [dict(zip(('id', 'name', 'email', 'phone', 'message'), row)) for row in cur]
+            return [dict(zip(('id', 'name', 'email', 'phone', 'message', 'space', 'dates'), row)) for row in cur]
 
     def mark_emailed(self, contact_id: int) -> None:
         with self._lock, self._db:
