@@ -151,12 +151,41 @@ def test_public_contact_is_private_and_staff_can_handle():
     assert msg['dates'] == 'Sat 21 Nov 2026, 3pm-11pm'
     assert msg['message'] == 'Can we hire the theatre?'
     assert 'Visitor' not in c.get('/api/shows.json').get_data(as_text=True)
-    assert c.get('/admin/', headers=AUTH).status_code == 200
+    admin_html = c.get('/admin/', headers=AUTH).get_data(as_text=True)
+    assert 'Website enquiries:' in admin_html
+    assert '1 awaiting delivery' in admin_html
+    assert 'No emails sent yet' in admin_html
+    assert 'Can we hire the theatre?' not in admin_html
+    assert 'visitor@example.org' not in admin_html
+    assert admin_html.index('Website enquiries:') > admin_html.index('Regulars')
     assert c.post(f"/admin/contacts/{msg['id']}/handled",
                   headers={**AUTH, 'Origin': 'http://localhost'}).status_code == 302
     assert svc.store.contacts()[0]['handled'] == 1  # remains visible until emailed
     svc.store.mark_emailed(msg['id'])
     assert svc.store.contacts() == []
+    delivered = c.get('/admin/', headers=AUTH).get_data(as_text=True)
+    assert 'Last email accepted by relay:' in delivered
+    assert 'None pending.' in delivered
+
+
+def test_admin_enquiry_summary_flags_unresolved_delivery_without_exposing_details():
+    c, svc = admin_client()
+    store = svc.store
+    store.save_contact('A visitor', 'first@example.net', '', 'First private message')
+    store.save_contact('Another visitor', 'second@example.net', '', 'Second private message')
+    [first, second] = store.pending_emails()
+    store.mark_emailed(first['id'])
+    for _ in range(12):
+        store.mark_email_failed(second['id'], 'SMTP diagnostic that staff should not see')
+    assert store.contact_delivery_summary()['needs_attention'] == 1
+    page = c.get('/admin/', headers=AUTH).get_data(as_text=True)
+    assert 'Last email accepted by relay:' in page
+    assert '1 awaiting delivery' in page
+    assert '1 need attention' in page
+    assert 'SMTP diagnostic' not in page
+    assert 'private message' not in page
+    assert 'first@example.net' not in page
+    assert 'second@example.net' not in page
 
 
 def test_contact_validation_and_honeypot():
