@@ -137,3 +137,36 @@ def test_changed_source_forces_full_sync():
     svc.refresh_now()
     assert src.calls == [None, None]
     assert titles(svc) == ['B']
+
+
+def test_public_contact_is_private_and_staff_can_handle():
+    c, svc = admin_client()
+    data = {'name': 'Visitor', 'email': 'visitor@example.org', 'message': 'Can we hire the theatre?'}
+    assert c.post('/api/contact', data=data).status_code == 403
+    assert c.post('/api/contact', data=data, headers={'Origin': 'http://localhost'}).status_code == 201
+    [msg] = svc.store.contacts()
+    assert msg['name'] == 'Visitor'
+    assert msg['message'] == 'Can we hire the theatre?'
+    assert 'Visitor' not in c.get('/api/shows.json').get_data(as_text=True)
+    assert c.get('/admin/', headers=AUTH).status_code == 200
+    assert c.post(f"/admin/contacts/{msg['id']}/handled",
+                  headers={**AUTH, 'Origin': 'http://localhost'}).status_code == 302
+    assert svc.store.contacts() == []
+
+
+def test_contact_validation_and_honeypot():
+    c, svc = admin_client()
+    valid = {'name': 'Visitor', 'email': 'visitor@example.org', 'message': 'A long enough message.'}
+    h = {'Origin': 'http://localhost'}
+    assert c.post('/api/contact', data={**valid, 'email': 'wrong'}, headers=h).status_code == 400
+    assert c.post('/api/contact', data={**valid, 'website': 'spambot.example'}, headers=h).status_code == 201
+    assert svc.store.contacts() == []
+
+
+def test_curtain_colour_api_and_admin_only_editing():
+    c, svc = admin_client()
+    assert c.get('/api/appearance.json').json == {'curtain': '#67192B'}
+    assert c.post('/admin/appearance', data={'curtain': '#FFFFFF'}, headers={'Origin': 'http://localhost'}).status_code == 401
+    assert c.post('/admin/appearance', data={'curtain': 'red'}, headers={**AUTH, 'Origin': 'http://localhost'}).status_code == 400
+    assert c.post('/admin/appearance', data={'curtain': '#882233'}, headers={**AUTH, 'Origin': 'http://localhost'}).status_code == 302
+    assert c.get('/api/appearance.json').json == {'curtain': '#882233'}
