@@ -121,7 +121,7 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
         prefill = {k: request.args.get(k, '') for k in ('match', 'name')}
         return render_template('admin.html', r=out.report, prefill=prefill,
                                curtain=service.store.get('curtain_color') or DEFAULT_CURTAIN,
-                               contacts=service.store.contacts())
+                               contact_delivery=service.store.contact_delivery_summary())
 
     @app.post('/admin/appearance')
     @admin_only
