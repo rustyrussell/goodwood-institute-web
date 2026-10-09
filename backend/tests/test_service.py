@@ -13,7 +13,7 @@ TZ = ZoneInfo('Australia/Adelaide')
 SOON = dt.datetime.now(TZ).date() + dt.timedelta(days=10)
 
 
-def item(id, summary='Show', notes='PUBLISH\nshow starts: 7pm', status='confirmed'):
+def item(id, summary='Show', notes='Publish to website\nshow starts: 7pm', status='confirmed'):
     return {'id': id, 'status': status, 'summary': summary, 'description': notes,
             'start': {'date': SOON.isoformat()}, 'end': {'date': (SOON + dt.timedelta(days=1)).isoformat()}, 'htmlLink': ''}
 
