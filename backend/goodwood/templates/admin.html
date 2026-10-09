@@ -1,9 +1,5 @@
 {% extends 'base.html' %}
-{% block title %}Status<p class="muted" id="contacts"><strong>Website enquiries:</strong>
-  {% if contact_delivery.last_accepted %}Last enquiry sent for email delivery: {{ contact_delivery.last_accepted }}.{% else %}No enquiries emailed yet.{% endif %}
-  {% if contact_delivery.pending %}{{ contact_delivery.pending }} awaiting delivery{% if contact_delivery.needs_attention %} ({{ contact_delivery.needs_attention }} need attention){% endif %}.{% else %}No emails pending.{% endif %}
-</p>
-{% endblock %}
+{% block title %}Status{% endblock %}
 {% block content %}
 {% set s = r.sync %}
 <div class="status">
@@ -130,4 +126,8 @@
 {% endif %}
 <p class="muted">Public data: <a href="{{ url_for('shows') }}">shows.json</a> · <a href="{{ url_for('regulars') }}">regulars.json</a>
   · built {{ r.generated }}</p>
+<p class="muted" id="contacts"><strong>Website enquiries:</strong>
+  {% if contact_delivery.last_accepted %}Last enquiry sent for email delivery: {{ contact_delivery.last_accepted }}.{% else %}No enquiries emailed yet.{% endif %}
+  {% if contact_delivery.pending %}{{ contact_delivery.pending }} awaiting delivery{% if contact_delivery.needs_attention %} ({{ contact_delivery.needs_attention }} need attention){% endif %}.{% else %}No emails pending.{% endif %}
+</p>
 {% endblock %}
