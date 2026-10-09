@@ -26,7 +26,7 @@ KEYWORDS: dict[str, list[str]] = {
     'show starts': ['show starts', 'show start', 'starts', 'start time', 'show time', 'showtime', 'curtain up', 'performance time'],
     'show ends': ['show ends', 'show end', 'ends', 'finish', 'finish time', 'finishes'],
     'tickets': ['tickets', 'ticket link', 'tickets link'],
-    'price': ['price', 'prices', 'ticket prices', 'ticket price', 'admission prices', 'admission'],
+    'price': ['price'],
     'image': ['image', 'images', 'poster', 'poster image'],
     'website': ['website', 'web site'],
     'summary': ['summary', 'blurb', 'about the show'],
