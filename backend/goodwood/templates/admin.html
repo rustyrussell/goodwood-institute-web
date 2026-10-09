@@ -1,5 +1,9 @@
 {% extends 'base.html' %}
-{% block title %}Status{% endblock %}
+{% block title %}Status<p class="muted" id="contacts"><strong>Website enquiries:</strong>
+  {% if contact_delivery.last_accepted %}Last email accepted by relay: {{ contact_delivery.last_accepted }} UTC.{% else %}No emails sent yet.{% endif %}
+  {% if contact_delivery.pending %}{{ contact_delivery.pending }} awaiting delivery{% if contact_delivery.needs_attention %} ({{ contact_delivery.needs_attention }} need attention){% endif %}.{% else %}None pending.{% endif %}
+</p>
+{% endblock %}
 {% block content %}
 {% set s = r.sync %}
 <div class="status">
@@ -20,40 +24,6 @@
   <button type="submit">Save colour</button>
   <span class="muted">Default oxblood: #67192B. Updates the public website immediately.</span>
 </form>
-
-<h2 id="contacts">Website enquiries ({{ contacts | length }} outstanding)</h2>
-<p class="muted">Enquiries are saved privately and queued for email delivery to bookings@.
-  SMTP delivery is checked every minute. Reply using the sender's email address.</p>
-{% for c in contacts %}
-<div class="card">
-  <h3>{{ c.name }} · <a href="mailto:{{ c.email }}">{{ c.email }}</a></h3>
-  <p class="muted">{{ c.created }} UTC{% if c.phone %} · {{ c.phone }}{% endif %}</p>
-  {% if c.emailed_at %}
-  <p><span class="badge info">Email accepted by relay {{ c.emailed_at }} UTC</span></p>
-  {% elif c.email_attempts >= 12 %}
-  <p><span class="badge error">Email delivery stopped after {{ c.email_attempts }} attempts</span></p>
-  {% elif c.email_attempts %}
-  <p><span class="badge warning">Email pending; attempt {{ c.email_attempts }} failed</span></p>
-  {% else %}
-  <p><span class="badge warning">Email queued</span></p>
-  {% endif %}
-  {% if c.last_email_error %}<p class="muted">Last SMTP error: {{ c.last_email_error }}</p>{% endif %}
-  {% if not c.emailed_at and c.email_attempts %}
-  <form method="post" action="{{ url_for('contact_retry_email', contact_id=c.id) }}">
-    <button type="submit">Retry email now</button>
-  </form>
-  {% endif %}
-  <p><strong>Space / enquiry type:</strong> {{ c.space or 'Not specified' }}</p>
-  <p><strong>Preferred dates / times:</strong> {{ c.dates or 'Not yet known' }}</p>
-  <p><strong>Details:</strong></p>
-  <div class="private">{{ c.message }}</div>
-  <form method="post" action="{{ url_for('contact_handled', contact_id=c.id) }}">
-    <button type="submit">Mark as handled</button>
-  </form>
-</div>
-{% else %}
-<p>No unanswered enquiries.</p>
-{% endfor %}
 
 <h2 id="problems">Problems
   <span class="badge error">{{ r.counts.error }} errors</span>
