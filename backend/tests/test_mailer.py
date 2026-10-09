@@ -43,7 +43,7 @@ class FakeSMTP:
 
 def test_message_is_sent_only_to_fixed_bookings_address_and_reply_to_sender():
     store = Store(':memory:')
-    store.save_contact('Visitor', 'visitor@example.net', '', 'Can we hire the theatre?')
+    store.save_contact('Visitor', 'visitor@example.net', '', 'Can we hire the theatre?',\n                       space='Studio Theatre', dates='Tue afternoons in November')
     FakeSMTP.sent = []
     FakeSMTP.fail = False
     assert send_pending(CFG, store, FakeSMTP) == (1, 0)
@@ -52,6 +52,9 @@ def test_message_is_sent_only_to_fixed_bookings_address_and_reply_to_sender():
     assert mail['Reply-To'] == 'visitor@example.net'
     assert mail['Subject'].startswith('[TEST] Goodwood website enquiry #')
     assert 'Can we hire the theatre?' in mail.get_content()
+    assert 'Space or enquiry type: Studio Theatre' in mail.get_content()
+    assert 'Preferred dates/times: Tue afternoons in November' in mail.get_content()
+    assert 'Phone:' not in mail.get_content()
     assert not store.pending_emails()
     assert store.contacts()[0]['emailed_at'] is not None
 
@@ -87,3 +90,4 @@ def test_existing_inbox_database_migrates_without_losing_enquiries(tmp_path):
     store = Store(path)
     [contact] = store.pending_emails()
     assert contact['name'] == 'Old enquiry'
+    assert contact['space'] == '' and contact['dates'] == ''
