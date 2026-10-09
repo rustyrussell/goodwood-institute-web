@@ -26,7 +26,7 @@ KEYWORDS: dict[str, list[str]] = {
     'show starts': ['show starts', 'show start', 'starts', 'start time', 'show time', 'showtime', 'curtain up', 'performance time'],
     'show ends': ['show ends', 'show end', 'ends', 'finish', 'finish time', 'finishes'],
     'tickets': ['tickets', 'ticket link', 'tickets link'],
-    'ticket prices': ['price', 'prices', 'ticket prices', 'ticket price', 'admission prices', 'admission'],
+    'price': ['price', 'prices', 'ticket prices', 'ticket price', 'admission prices', 'admission'],
     'image': ['image', 'images', 'poster', 'poster image'],
     'website': ['website', 'web site'],
     'summary': ['summary', 'blurb', 'about the show'],
@@ -37,10 +37,10 @@ KEYWORDS: dict[str, list[str]] = {
 ALIASES = {alias: key for key, aliases in KEYWORDS.items() for alias in aliases}
 
 # Keywords that only make sense for a show; seeing them without PUBLISH is a near miss.
-SHOW_KEYWORDS = {'dates', 'doors open', 'show starts', 'show ends', 'tickets', 'ticket prices', 'image'}
+SHOW_KEYWORDS = {'dates', 'doors open', 'show starts', 'show ends', 'tickets', 'price', 'image'}
 
 # "cost" is not a recognised instruction; suggest the public price field.
-PRICE_WORDS = {'cost': 'ticket prices'}
+PRICE_WORDS = {'cost': 'price'}
 
 # Caps stop a pasted private paragraph from going public under a keyword.  Web
 # addresses (often very long, e.g. image links) are only checked for being URLs.
