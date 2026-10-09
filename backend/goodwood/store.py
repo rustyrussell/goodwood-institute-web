@@ -11,6 +11,15 @@ from .publish import Rule
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS events (id TEXT PRIMARY KEY, data TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id INTEGER PRIMARY KEY,
+    created TEXT NOT NULL DEFAULT (datetime('now')),
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    phone TEXT NOT NULL DEFAULT '',
+    message TEXT NOT NULL,
+    handled INTEGER NOT NULL DEFAULT 0
+);
 CREATE TABLE IF NOT EXISTS rules (
     id INTEGER PRIMARY KEY,
     match TEXT NOT NULL,
@@ -82,3 +91,21 @@ class Store:
     def delete_rule(self, rule_id: int) -> None:
         with self._lock, self._db:
             self._db.execute('DELETE FROM rules WHERE id = ?', (rule_id,))
+
+    # ---- contact enquiries (kept privately in SQLite, never in public JSON)
+
+    def save_contact(self, name: str, email: str, phone: str, message: str) -> None:
+        with self._lock, self._db:
+            self._db.execute('INSERT INTO contact_messages (name, email, phone, message) VALUES (?, ?, ?, ?)',
+                             (name, email, phone, message))
+
+    def contacts(self) -> list[dict]:
+        with self._lock:
+            rows = self._db.execute(
+                'SELECT id, created, name, email, phone, message FROM contact_messages '
+                'WHERE handled = 0 ORDER BY id DESC LIMIT 100')
+            return [dict(zip(('id', 'created', 'name', 'email', 'phone', 'message'), row)) for row in rows]
+
+    def handle_contact(self, contact_id: int) -> None:
+        with self._lock, self._db:
+            self._db.execute('UPDATE contact_messages SET handled = 1 WHERE id = ?', (contact_id,))
