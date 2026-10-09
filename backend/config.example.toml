@@ -16,6 +16,8 @@ password = "change me"
 database = "var/goodwood.db"
 timezone = "Australia/Adelaide"
 refresh_seconds = 30
+# Enable only on test.goodwoodinstitute.asn.au; production defaults to false.
+include_drafts = false
 # Development only: also serve the static site from here.
 # site_dir = "../site"
 
