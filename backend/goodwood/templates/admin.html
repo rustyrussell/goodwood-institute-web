@@ -85,9 +85,9 @@
 
 <h2 id="regulars">Regulars</h2>
 <p class="muted">Calendar entries whose title contains the text on the left are shown in the weekly timetable for
-  the next 4 weeks with this name, description and website. Nothing from their notes is published.</p>
+  the rest of the month with this name, description and website. Nothing from their notes is published.</p>
 <table class="stack">
-  <thead><tr><th>Calendar title contains</th><th>Public name</th><th>Activity</th><th>Website</th><th>Next 4 weeks</th><th></th></tr></thead>
+  <thead><tr><th>Calendar title contains</th><th>Public name</th><th>Activity</th><th>Website</th><th>This month</th><th></th></tr></thead>
   <tbody>
   {% for g in r.regulars %}{% set rule = g.rule %}
     <tr>
@@ -118,7 +118,7 @@
 
 {% if r.unmatched %}
 <h3 style="margin-top:1.5rem">Repeated entries not on the timetable</h3>
-<p class="muted">These titles come up more than once in the next 4 weeks but don't match any regular. Ignore them if
+<p class="muted">These titles come up more than once this month but don't match any regular. Ignore them if
   they are private.</p>
 <table class="stack">
   <thead><tr><th>Calendar title</th><th>Next</th><th>Times in next 4 weeks</th><th></th></tr></thead>
