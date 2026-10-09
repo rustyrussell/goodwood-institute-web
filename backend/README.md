@@ -100,7 +100,7 @@ whole venue, unsure or general query), captures flexible date/time requests
 and an event description, and then requests name and email. **Phone is optional**.
 
 The validated space and optional dates are stored in new SQLite columns and
-included in outgoing emails and the admin inbox. Existing databases migrate
+included in outgoing emails and the private SQLite record. Existing databases migrate
 automatically; no SQL command is required. In the template, show an error and
 retain the typed values if the server rejects an enquiry. On success, confirm
 receipt; actual SMTP sending still happens in the background.
@@ -117,9 +117,10 @@ Contact enquiries POST to `/api/contact` and are saved in the same private
 SQLite database as the calendar cache. A separate systemd timer sends them
 through Google Workspace's IP-allowlisted, STARTTLS-only SMTP relay, to the
 **fixed** recipient `bookings@goodwoodinstitute.asn.au`. The visitor's email is
-used only for Reply-To. Staff can read each item and delivery state under
-`/admin/#contacts`, retry errors and mark it handled. Failed attempts retry
-with backoff (up to 12); no messages are deleted on SMTP failure. The form
+used only for Reply-To. The staff admin page ends with a single-line delivery
+summary (last accepted email and count awaiting delivery); individual enquiry
+details and SMTP errors are not displayed to staff. Failed attempts retry with
+backoff (up to 12); no messages are deleted on SMTP failure. The form
 limits the number of submissions per hour, checks same-origin and uses a
 honeypot; watch for spam. Protect the SQLite file and include it in backups.
 
