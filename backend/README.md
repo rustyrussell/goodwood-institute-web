@@ -85,3 +85,22 @@ Admin uses HTTP Basic auth, so serve it over HTTPS.
 | `goodwood/store.py` | SQLite: local copy of events, sync state, regulars rules. |
 | `goodwood/app.py` | Flask routes. |
 | `goodwood/authorize.py` | One-off browser sign-in that creates the user token. |
+
+## Drafts and contact enquiries
+
+Set `[app] include_drafts = true` **only on the test deployment**. This is
+false by default, ensuring that a production deployment excludes entries with
+a `DRAFT` instruction. Staff should write `Publish to website` on a line,
+then optional `DRAFT`, then whitelisted show details. Other booking notes
+belong above the marker and never enter public feeds.
+
+Contact enquiries POST to `/api/contact` and are saved in the same private
+SQLite database as the calendar cache. Staff can read them under `/admin/#contacts`
+and mark them handled. There is **no automatic email delivery yet**;
+arrange a staff inbox review process before public launch. Protect the
+SQLite file and include it in backups. The form has basic origin, size, and
+honeypot checks but no rate-limit or CAPTCHA; configure abuse protection for
+production use.
+
+Curtain colour is controlled under `/admin/#appearance` and exposed only as
+a hex colour by `/api/appearance.json`. The default is oxblood `#67192B`.
