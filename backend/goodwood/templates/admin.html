@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}Status<p class="muted" id="contacts"><strong>Website enquiries:</strong>
-  {% if contact_delivery.last_accepted %}Last email accepted by relay: {{ contact_delivery.last_accepted }} UTC.{% else %}No emails sent yet.{% endif %}
-  {% if contact_delivery.pending %}{{ contact_delivery.pending }} awaiting delivery{% if contact_delivery.needs_attention %} ({{ contact_delivery.needs_attention }} need attention){% endif %}.{% else %}None pending.{% endif %}
+  {% if contact_delivery.last_accepted %}Last enquiry sent for email delivery: {{ contact_delivery.last_accepted }}.{% else %}No enquiries emailed yet.{% endif %}
+  {% if contact_delivery.pending %}{{ contact_delivery.pending }} awaiting delivery{% if contact_delivery.needs_attention %} ({{ contact_delivery.needs_attention }} need attention){% endif %}.{% else %}No emails pending.{% endif %}
 </p>
 {% endblock %}
 {% block content %}
