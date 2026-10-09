@@ -130,6 +130,7 @@ def parse_notes(description: str | None) -> Notes:
 
         if PUBLISH_MARKER.fullmatch(line):
             publishing = True
+            notes.entries.clear()  # pre-marker regular-status notes must never enter a show
             notes.flags.add('publish')
             continue
 
