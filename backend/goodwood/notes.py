@@ -2,7 +2,8 @@
 
 The confidentiality rule lives here: the only things that come out of the notes
 are explicitly named fields after a 'Publish to website' marker.
-Everything before that marker stays private. The first malformed non-blank\nline after the marker ends public parsing; that line and all later lines stay private.
+Everything before that marker stays private. Any unknown or malformed non-blank
+line after the marker aborts publication of the entire event.
 """
 from __future__ import annotations
 
@@ -15,9 +16,8 @@ from dataclasses import dataclass, field
 FLAGS = {'featured', 'hide', 'draft'}
 PUBLISH_MARKER = re.compile(r'^publish\s+to\s+(?:the\s+)?website\s*(?::\s*(?:yes|true|on)?)?\s*[.!]?$', re.I)
 
-# Canonical keyword -> accepted spellings.  Deliberately no generic words like
-# "notes", "info", "description" or "price": those are likely to already be in
-# use for private details (e.g. the hire price).
+# Canonical keyword -> accepted spellings. Fields are only public after an
+# explicit Publish to website marker. Keep unrelated private notes above it.
 KEYWORDS: dict[str, list[str]] = {
     'title': ['title'],
     'company': ['company', 'presented by'],
@@ -26,7 +26,7 @@ KEYWORDS: dict[str, list[str]] = {
     'show starts': ['show starts', 'show start', 'starts', 'start time', 'show time', 'showtime', 'curtain up', 'performance time'],
     'show ends': ['show ends', 'show end', 'ends', 'finish', 'finish time', 'finishes'],
     'tickets': ['tickets', 'ticket link', 'tickets link'],
-    'ticket prices': ['ticket prices', 'ticket price', 'admission prices', 'admission'],
+    'ticket prices': ['price', 'prices', 'ticket prices', 'ticket price', 'admission prices', 'admission'],
     'image': ['image', 'images', 'poster', 'poster image'],
     'website': ['website', 'web site'],
     'summary': ['summary', 'blurb', 'about the show'],
@@ -39,8 +39,8 @@ ALIASES = {alias: key for key, aliases in KEYWORDS.items() for alias in aliases}
 # Keywords that only make sense for a show; seeing them without PUBLISH is a near miss.
 SHOW_KEYWORDS = {'dates', 'doors open', 'show starts', 'show ends', 'tickets', 'ticket prices', 'image'}
 
-# Not keywords (probably the hire price), but worth a hint on a published show.
-PRICE_WORDS = {'price': 'ticket prices', 'prices': 'ticket prices', 'cost': 'ticket prices'}
+# "cost" is not a recognised instruction; suggest the public price field.
+PRICE_WORDS = {'cost': 'ticket prices'}
 
 # Caps stop a pasted private paragraph from going public under a keyword.  Web
 # addresses (often very long, e.g. image links) are only checked for being URLs.
@@ -71,6 +71,7 @@ class Issue:
 @dataclass
 class Notes:
     flags: set[str] = field(default_factory=set)
+    invalid_publish: bool = False  # fail-closed: do not publish partial shows
     entries: list[Entry] = field(default_factory=list)
     private_lines: list[str] = field(default_factory=list)
     issues: list[Issue] = field(default_factory=list)
@@ -118,7 +119,8 @@ def parse_notes(description: str | None) -> Notes:
 
     Private notes before the marker are never interpreted as public fields.
     After it, allow familiar field separators and time-first notation, but
-    only whitelist known keys: arbitrary free text never becomes public.
+    only whitelist known keys: any malformed or unknown non-blank line
+    invalidates the entire published show, rather than showing partial data.
     """
     notes = Notes()
     publishing = False
@@ -136,8 +138,9 @@ def parse_notes(description: str | None) -> Notes:
         if PUBLISH_MARKER.fullmatch(line):
             if publishing:
                 notes.private_lines.append(line)
-                notes.issues.append(Issue('warning', 'duplicate Publish to website line; '
-                                          'public instructions stop here', lineno))
+                notes.issues.append(Issue('error', 'duplicate Publish to website line; '
+                                          'the show will not be published', lineno))
+                notes.invalid_publish = True
                 stopped = True
                 continue
             publishing = True
@@ -188,9 +191,10 @@ def parse_notes(description: str | None) -> Notes:
             if key:
                 value = _clean(value).rstrip(';,. ')
                 if not value:
-                    notes.issues.append(Issue('warning', f'"{line}" has no value; '
-                                              'public instructions stop here', lineno))
+                    notes.issues.append(Issue('error', f'"{line}" has no value; '
+                                              'the show will not be published', lineno))
                     notes.private_lines.append(line)
+                    notes.invalid_publish = True
                     stopped = True
                     continue
                 limit = MAX_LENGTH.get(key, DEFAULT_MAX_LENGTH)
@@ -198,18 +202,19 @@ def parse_notes(description: str | None) -> Notes:
                     notes.issues.append(Issue('error', f'{key}: is longer than {limit} characters, so it is not '
                                                        'published; shorten it', lineno))
                     notes.private_lines.append(line)
+                    notes.invalid_publish = True
                     stopped = True
                     continue
                 notes.entries.append(Entry(key, value, lineno))
                 continue
 
         notes.private_lines.append(line)
+        notes.invalid_publish = True
         stopped = True
         word = _clean(m.group(1)).lower() if m and not isinstance(m, tuple) else ''
         guessed = ALIASES.get(word) or PRICE_WORDS.get(word) or _closest_key(word) if word else None
         if guessed:
             notes.loose_keys.append((lineno, line, guessed))
-        notes.issues.append(Issue('warning', f'"{line}" is not a recognised website instruction; '
-                                            'public instructions stop here (this and all later lines '
-                                            'are kept private)', lineno))
+        notes.issues.append(Issue('error', f'"{line}" is not a recognised website instruction; '
+                                          'the show will not be published', lineno))
     return notes
