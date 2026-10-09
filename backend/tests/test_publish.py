@@ -338,9 +338,72 @@ def test_multiple_images_in_carousel_deduplicated_and_validated():
     assert any('not a web address' in x for x in issues(out, 'error'))
 
 
+def test_unknown_line_ends_public_fields_even_when_later_lines_are_valid():
+    e = ev('Show', dt.date(2026, 11, 14),
+           notes='Publish to website\ntitle: Public title\n'
+                 'Hirer says keep the rest confidential\n'
+                 'tickets: https://example.org/private\n'
+                 'summary: This was never authorised for publication')
+    out = build([e], [], NOW)
+    [show] = out.shows['shows']
+    assert show['title'] == 'Public title'
+    assert 'ticketsUrl' not in show
+    assert 'summary' not in show
+    [p] = out.report['published']
+    assert 'tickets: https://example.org/private' in p['private']
+    assert any('public instructions stop here' in x for x in issues(out, 'warning'))
+
+
+def test_blank_lines_are_not_end_markers():
+    e = ev('Show', dt.date(2026, 11, 14),
+           notes='Publish to website\ntitle: Public title\n\n  \n'
+                 'tickets: https://example.org/public')
+    out = build([e], [], NOW)
+    assert out.shows['shows'][0]['ticketsUrl'] == 'https://example.org/public'
+
+
+def test_empty_or_overlong_fields_end_public_instructions():
+    for bad_field in ('company:', 'summary: ' + 'x' * 401):
+        n = parse_notes(
+            'Publish to website\ntitle: Public title\n'
+            + bad_field + '\ntickets: https://example.org/private'
+        )
+        assert n.first('title').value == 'Public title'
+        assert n.first('tickets') is None
+        assert 'tickets: https://example.org/private' in n.private_lines
+        assert n.issues
+
+
+def test_misspelled_field_stops_public_parsing():
+    n = parse_notes(
+        'Publish to website\nTixkets: https://example.org/private\n'
+        'summary: Hidden text')
+    assert n.first('summary') is None
+    assert n.loose_keys[0][2] == 'tickets'
+
+
+def test_publish_marker_after_unknown_line_does_not_reopen_publication():
+    n = parse_notes(
+        'Publish to website\ntitle: Public\nEnd of instructions\n'
+        'Publish to website\nsummary: Secret')
+    assert n.first('title').value == 'Public'
+    assert n.first('summary') is None
+    assert 'Publish to website' in n.private_lines
+
+
+def test_duplicate_publish_marker_stops_public_parsing():
+    n = parse_notes(
+        'Publish to website\ntitle: Public\n'
+        'Publish to website\nsummary: Secret')
+    assert n.first('title').value == 'Public'
+    assert n.first('summary') is None
+    assert any('duplicate' in x.message for x in n.issues)
+
+
 def test_never_publish_unrecognised_line_below_marker():
     e = ev('Show', dt.date(2026, 11, 14),
            notes='Publish to website\nInvoice: secret\nsummary: A good show.')
     out = build([e], [], NOW)
     assert 'secret' not in json.dumps(out.shows)
+    assert 'A good show.' not in json.dumps(out.shows)
     assert any('not a recognised website instruction' in x for x in issues(out, 'warning'))
