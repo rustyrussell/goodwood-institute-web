@@ -87,7 +87,10 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
                 re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email) and
                 len(phone) <= 60 and 10 <= len(message) <= 5000):
             return jsonify({'error': 'Please enter your name, email address and a message of at least 10 characters.'}), 400
-        service.store.save_contact(name, email, phone, message)
+        try:
+            service.store.save_contact(name, email, phone, message)
+        except ValueError as exc:
+            return jsonify({'error': str(exc)}), 429
         return jsonify({'ok': True}), 201
 
     # ------------------------------------------------------------ admin
@@ -127,6 +130,13 @@ def create_app(cfg: config_mod.Config, service: Service | None = None) -> Flask:
     def contact_handled(contact_id: int):
         service.store.handle_contact(contact_id)
         flash('Enquiry marked as handled.')
+        return redirect(url_for('admin') + '#contacts')
+
+    @app.post('/admin/contacts/<int:contact_id>/retry-email')
+    @admin_only
+    def contact_retry_email(contact_id: int):
+        service.store.retry_contact(contact_id)
+        flash('Enquiry email queued for retry.')
         return redirect(url_for('admin') + '#contacts')
 
     @app.get('/admin/guide')
