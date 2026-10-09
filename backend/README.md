@@ -85,6 +85,26 @@ Admin uses HTTP Basic auth, so serve it over HTTPS.
 | `goodwood/app.py` | Flask routes. |
 | `goodwood/authorize.py` | One-off browser sign-in that creates the user token. |
 
+
+## Venue enquiry page
+
+The homepage links to `/contact.html` (also the destination of the Hire and
+Contact navigation). This is a conventional page, not a modal: visitors can
+always return via their browser's Back button or the visible back links.
+
+It offers two *explicit* choices: (1) "Open email app", which only then launches
+a `mailto:` draft with suggested dates, details and reply information; or
+(2) a server-backed form, which needs no email client. The form links to the
+rates PDF, asks which space is required (Main Theatre, Studio Theatre, Little Reid,
+whole venue, unsure or general query), captures flexible date/time requests
+and an event description, and then requests name and email. **Phone is optional**.
+
+The validated space and optional dates are stored in new SQLite columns and
+included in outgoing emails and the admin inbox. Existing databases migrate
+automatically; no SQL command is required. In the template, show an error and
+retain the typed values if the server rejects an enquiry. On success, confirm
+receipt; actual SMTP sending still happens in the background.
+
 ## Drafts and contact enquiries
 
 Set `[app] include_drafts = true` **only on the test deployment**. This is
