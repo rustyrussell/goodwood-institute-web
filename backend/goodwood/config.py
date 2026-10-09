@@ -42,6 +42,5 @@ def load(path: str | None = None) -> Config:
     )
     if not cfg.calendar_file and not (cfg.calendar_id and cfg.credentials):
         raise SystemExit(f'{path}: set [calendar] id and credentials (or file, for development)')
-    if not cfg.admin_password:
-        raise SystemExit(f'{path}: set [admin] password')
+    # Empty password is allowed only behind the staff-only reverse-proxy gate.
     return cfg
