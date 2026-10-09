@@ -114,3 +114,11 @@ function openCurtain() {
   else document.getElementById('week-grid').innerHTML = '<div class="empty">The timetable is unavailable right now.</div>';
   openCurtain();
 })();
+
+// Caddy returns 204 only when this browser reaches the site from Staff Wi-Fi.
+// Never use the visibility of this link as an access-control mechanism.
+fetch('/api/staff-status', { cache: 'no-store', credentials: 'same-origin' })
+  .then(response => {
+    if (response.status === 204) document.getElementById('staff-admin-link').hidden = false;
+  })
+  .catch(() => {});
