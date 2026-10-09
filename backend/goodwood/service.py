@@ -18,13 +18,14 @@ log = logging.getLogger(__name__)
 
 class Service:
     def __init__(self, store: Store, source, tz: ZoneInfo, interval: float = 30, clock=time.monotonic,
-                 venues: dict[str, str] | None = None):
+                 venues: dict[str, str] | None = None, include_drafts: bool = False):
         self.store = store
         self.source = source
         self.tz = tz
         self.interval = interval
         self.clock = clock
         self.venues = venues
+        self.include_drafts = include_drafts
         self._lock = threading.Lock()
         self._syncing = False
         self._last_attempt: float | None = None
@@ -102,4 +103,4 @@ class Service:
             'lastError': self.store.get('last_error'),
             'events': len(events),
         }
-        self._output = build(events, self.store.rules(), self.now(), sync_info, self.venues)
+        self._output = build(events, self.store.rules(), self.now(), sync_info, self.venues, include_drafts=self.include_drafts)
