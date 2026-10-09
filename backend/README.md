@@ -2,8 +2,7 @@
 
 Reads the Institute's Google Calendar and publishes:
 
-- `/api/shows.json`: entries whose notes contain a `PUBLISH` line, built only from recognised
-  `keyword: value` lines (everything else in the notes stays private);
+- `/api/shows.json`: entries whose notes contain `Publish to website`, built only from recognised\n  instructions below that marker (earlier notes and unrecognised fields stay private);
 - `/api/regulars.json`: the rest of the calendar month of regular classes, matched by title against
   rules kept in the admin page;
 - `/admin/`: staff status page (problems, near misses, exactly what is published, regulars
@@ -95,12 +94,49 @@ then optional `DRAFT`, then whitelisted show details. Other booking notes
 belong above the marker and never enter public feeds.
 
 Contact enquiries POST to `/api/contact` and are saved in the same private
-SQLite database as the calendar cache. Staff can read them under `/admin/#contacts`
-and mark them handled. There is **no automatic email delivery yet**;
-arrange a staff inbox review process before public launch. Protect the
-SQLite file and include it in backups. The form has basic origin, size, and
-honeypot checks but no rate-limit or CAPTCHA; configure abuse protection for
-production use.
+SQLite database as the calendar cache. A separate systemd timer sends them
+through Google Workspace's IP-allowlisted, STARTTLS-only SMTP relay, to the
+**fixed** recipient `bookings@goodwoodinstitute.asn.au`. The visitor's email is
+used only for Reply-To. Staff can read each item and delivery state under
+`/admin/#contacts`, retry errors and mark it handled. Failed attempts retry
+with backoff (up to 12); no messages are deleted on SMTP failure. The form
+limits the number of submissions per hour, checks same-origin and uses a
+honeypot; watch for spam. Protect the SQLite file and include it in backups.
+
+Mail setup on CT 100 (root; do not modify production configuration in Git):
+
+1. In Google Admin → Apps → Google Workspace → Gmail → Routing, configure an
+   SMTP relay allowing **only addresses in my domains**, authenticate by the
+   ABB static public IP **144.6.28.44**, require TLS, no SMTP AUTH. Do **not**
+   select "Any addresses". Allow changes time to propagate.
+2. In the existing private `config.toml`, add:
+
+   ```toml
+   [mail]
+   smtp_host = "smtp-relay.gmail.com"
+   smtp_port = 587
+   from_address = "website@goodwoodinstitute.asn.au"
+   to_address = "bookings@goodwoodinstitute.asn.au"
+   subject_prefix = "[TEST]"
+   ```
+
+3. Install the two unit files from `deploy/` into `/etc/systemd/system/`:
+
+   ```sh
+   cp deploy/goodwood-website-mailer.{service,timer} /etc/systemd/system/
+   systemctl daemon-reload
+   systemctl enable --now goodwood-website-mailer.timer
+   ```
+
+4. Submit one test enquiry from the public form, then run
+   `systemctl start goodwood-website-mailer.service` to send immediately.
+   Check `journalctl -u goodwood-website-mailer -n 50 --no-pager`, the
+   `bookings@` inbox, and the admin delivery status. Confirm Reply-To points
+   to the visitor. The timer then runs roughly once per minute.
+
+Only the static ABB WAN IP is allowlisted; Telstra failover may prevent mail
+until ABB returns (the worker retries). TLS verification is mandatory.
+Clear the `[TEST]` subject prefix when production is ready.
 
 Curtain colour is controlled under `/admin/#appearance` and exposed only as
 a hex colour by `/api/appearance.json`. The default is oxblood `#67192B`.
