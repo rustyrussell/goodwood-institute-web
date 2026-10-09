@@ -1,9 +1,8 @@
 """Reading the annotations staff put in a calendar event's notes.
 
 The confidentiality rule lives here: the only things that come out of the notes
-are flag lines (PUBLISH, FEATURED, HIDE) and the single-line values of known
-keywords.  Every other line is private and is only ever shown on the staff
-admin page.
+are explicitly named fields after a 'Publish to website' marker.
+Everything before that marker, and any unrecognised line, stays private.
 """
 from __future__ import annotations
 
@@ -13,7 +12,8 @@ import re
 from dataclasses import dataclass, field
 
 # Lines that are a single word on their own.
-FLAGS = {'publish', 'featured', 'hide'}
+FLAGS = {'featured', 'hide', 'draft'}
+PUBLISH_MARKER = re.compile(r'^publish\s+to\s+(?:the\s+)?website\s*(?::\s*(?:yes|true|on)?)?\s*[.!]?
 
 # Canonical keyword -> accepted spellings.  Deliberately no generic words like
 # "notes", "info", "description" or "price": those are likely to already be in
@@ -23,13 +23,13 @@ KEYWORDS: dict[str, list[str]] = {
     'company': ['company', 'presented by'],
     'dates': ['dates', 'date'],
     'doors open': ['doors open', 'doors'],
-    'show starts': ['show starts', 'show start', 'starts', 'start time', 'show time', 'showtime', 'curtain up'],
+    'show starts': ['show starts', 'show start', 'starts', 'start time', 'show time', 'showtime', 'curtain up', 'performance time'],
     'show ends': ['show ends', 'show end', 'ends', 'finish', 'finish time', 'finishes'],
     'tickets': ['tickets', 'ticket link', 'tickets link'],
-    'ticket prices': ['ticket prices', 'ticket price'],
-    'image': ['image', 'poster'],
+    'ticket prices': ['ticket prices', 'ticket price', 'admission prices', 'admission'],
+    'image': ['image', 'images', 'poster', 'poster image'],
     'website': ['website', 'web site'],
-    'summary': ['summary', 'blurb'],
+    'summary': ['summary', 'blurb', 'about the show'],
     'suitable for': ['suitable for', 'ages'],
     'duration': ['duration', 'running time'],
     'status': ['status'],
@@ -47,7 +47,7 @@ PRICE_WORDS = {'price': 'ticket prices', 'prices': 'ticket prices', 'cost': 'tic
 MAX_LENGTH = {'summary': 400, 'tickets': 2000, 'image': 2000, 'website': 2000}
 DEFAULT_MAX_LENGTH = 120
 
-_KEY_LINE = re.compile(r'^([A-Za-z][A-Za-z ]{0,24}?)\s*:\s*(.*)$')
+_KEY_LINE = re.compile(r'^([A-Za-z][A-Za-z ]{0,30}?)\s*(?::|=|\s[-–—]\s)\s*(.*)
 _LOOSE_KEY_LINE = re.compile(r'^([A-Za-z][A-Za-z ]{0,24}?)\s*(?:[:=]|\s[-–—]\s|\s-|-\s)\s*(.*)$')
 _TIME_FIRST = re.compile(r'^(\d{1,2}(?:[.:]\d\d)?\s*(?:am|pm))\s+(?:approx\.?\s+|approximate\s+)?([a-z ]+?)[;,.]?$')
 _BULLET = re.compile(r'^\s*(?:[-*•·]\s+)')
@@ -114,25 +114,66 @@ def _closest_key(word: str) -> str | None:
 
 
 def parse_notes(description: str | None) -> Notes:
+    """The publication marker is an explicit trust boundary.
+
+    Private notes before the marker are never interpreted as public fields.
+    After it, allow familiar field separators and time-first notation, but
+    only whitelist known keys: arbitrary free text never becomes public.
+    """
     notes = Notes()
+    publishing = False
     for lineno, raw in enumerate(notes_to_text(description).split('\n'), start=1):
         line = _clean(_BULLET.sub('', raw))
         if not line:
             continue
         lower = line.lower()
 
-        if lower in FLAGS:
-            notes.flags.add(lower)
+        if PUBLISH_MARKER.fullmatch(line):
+            publishing = True
+            notes.flags.add('publish')
+            continue
+
+        if not publishing:
+            notes.private_lines.append(line)
+            # Regular timetables use these directives without being published shows.
+            if lower == 'hide':
+                notes.flags.add('hide')
+            m = _KEY_LINE.match(line)
+            if m and _clean(m.group(1)).lower() == 'status':
+                notes.entries.append(Entry('status', _clean(m.group(2)), lineno))
+            if re.search(r'\bpublish\b', lower):
+                notes.publish_like.append((lineno, line))
+            elif m and (_clean(m.group(1)).lower() in ALIASES):
+                notes.loose_keys.append((lineno, line, ALIASES[_clean(m.group(1)).lower()]))
+            continue
+
+        if lower.rstrip(':') in FLAGS:
+            notes.flags.add(lower.rstrip(':'))
             continue
 
         m = _KEY_LINE.match(line)
+        if not m:
+            # Accept e.g. "Show starts 7pm", "Doors open 6:30pm".
+            for alias in sorted(ALIASES, key=len, reverse=True):
+                if lower.startswith(alias + ' '):
+                    m = (alias, line[len(alias):].strip())
+                    break
+        if not m:
+            # Existing notes sometimes read "6:30pm doors open".
+            time_first = _TIME_FIRST.match(lower)
+            if time_first and time_first.group(2) in ALIASES:
+                m = (time_first.group(2), time_first.group(1))
+
         if m:
-            alias = _clean(m.group(1)).lower()
+            if isinstance(m, tuple):
+                alias, value = m
+            else:
+                alias, value = _clean(m.group(1)).lower(), _clean(m.group(2))
             key = ALIASES.get(alias)
             if key:
-                value = _clean(m.group(2)).rstrip(';,. ')
+                value = _clean(value).rstrip(';,. ')
                 if not value:
-                    notes.issues.append(Issue('warning', f'"{line}" has nothing after the colon', lineno))
+                    notes.issues.append(Issue('warning', f'"{line}" has no value', lineno))
                     continue
                 limit = MAX_LENGTH.get(key, DEFAULT_MAX_LENGTH)
                 if len(value) > limit:
@@ -143,25 +184,12 @@ def parse_notes(description: str | None) -> Notes:
                 notes.entries.append(Entry(key, value, lineno))
                 continue
 
-        # Everything below is private.  Look for near misses.
         notes.private_lines.append(line)
-        if re.search(r'\bpublish', lower):
-            notes.publish_like.append((lineno, line))
-            continue
-        m = _LOOSE_KEY_LINE.match(line)
-        if m:
-            word = _clean(m.group(1)).lower()
-            key = ALIASES.get(word) or PRICE_WORDS.get(word) or _closest_key(word)
-            if key:
-                notes.loose_keys.append((lineno, line, key))
-                continue
-        for alias, key in ALIASES.items():
-            if len(alias) >= 5 and lower.startswith(alias + ' ') and key in SHOW_KEYWORDS:
-                notes.loose_keys.append((lineno, line, key))
-                break
+        word = _clean(m.group(1)).lower() if m and not isinstance(m, tuple) else ''
+        guessed = ALIASES.get(word) or PRICE_WORDS.get(word) or _closest_key(word) if word else None
+        if guessed:
+            notes.loose_keys.append((lineno, line, guessed))
         else:
-            # Time first, as in "5:45pm doors open;" or "6:30pm show time".
-            m = _TIME_FIRST.match(lower)
-            if m and m.group(2) in ALIASES and ALIASES[m.group(2)] in SHOW_KEYWORDS:
-                notes.loose_keys.append((lineno, line, ALIASES[m.group(2)]))
+            notes.issues.append(Issue('warning', f'"{line}" is not a recognised website instruction '
+                                                    '(kept private)', lineno))
     return notes
