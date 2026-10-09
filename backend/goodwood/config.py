@@ -18,6 +18,11 @@ class Config:
     refresh_seconds: float = 30
     include_drafts: bool = False # only enable on test deployments
     site_dir: str = ''              # development: serve the static site too
+    smtp_host: str = ''           # explicit opt-in to sending mail
+    smtp_port: int = 587
+    mail_from: str = ''
+    mail_to: str = ''
+    mail_subject_prefix: str = ''
     venues: dict | None = None      # Google event colour ID -> venue name (None: built-in defaults)
 
 
@@ -30,6 +35,7 @@ def load(path: str | None = None) -> Config:
         return str((base / p).resolve()) if p else ''
 
     cal, admin, app = data.get('calendar', {}), data.get('admin', {}), data.get('app', {})
+    mail = data.get('mail', {})
     cfg = Config(
         calendar_id=cal.get('id', ''),
         credentials=rel(cal.get('credentials', '')),
@@ -40,6 +46,11 @@ def load(path: str | None = None) -> Config:
         refresh_seconds=float(app.get('refresh_seconds', Config.refresh_seconds)),
         site_dir=rel(app.get('site_dir', '')),
         include_drafts=bool(app.get('include_drafts', False)),
+        smtp_host=mail.get('smtp_host', ''),
+        smtp_port=int(mail.get('smtp_port', 587)),
+        mail_from=mail.get('from_address', ''),
+        mail_to=mail.get('to_address', ''),
+        mail_subject_prefix=mail.get('subject_prefix', ''),
         venues={str(k): v for k, v in data['venues'].items()} if 'venues' in data else None,
     )
     if not cfg.calendar_file and not (cfg.calendar_id and cfg.credentials):
